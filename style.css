@@ -2,14 +2,14 @@ html {
     background-color: azure;
 }
 
-.card1 {
+.card1 .card2 .card3{
  display: grid;
  grid-template-columns: 1fr 1fr 1fr;
  grid-template-rows: 100px 100px;
  grid-gap: 10px;
 }
 
-.card1 button{
+.card1 .card2 .card3 button {
   width: 125px;
   height: 125px;
   background-color: #007bff;
@@ -20,30 +20,8 @@ html {
   cursor: pointer;
 }
 
-.card1 img{
+.card1 .card2 .card3 img{
   width: 50px;
   height: 50px;
 }
 
-.card2 {
- display: grid;
- grid-template-columns: 1fr 1fr 1fr;
- grid-template-rows: 100px 100px;
- grid-gap: 10px;
-}
-
-.card2 button{
-  width: 125px;
-  height: 125px;
-  background-color: #007bff;
-  color: #fff;
-  border: 1px solid #007bff;
-  padding: 10px 20px;
-  border-radius: 30px;
-  cursor: pointer;
-}
-
-.card2 img{
-  width: 50px;
-  height: 50px;
-}
