@@ -1,0 +1,96 @@
+
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=360,user-scalable=no"/>
+    <meta name="description" content="CoCo编辑器"/><title></title>
+    <link href="https://creation.codemao.cn/coconut/web/1.22.0-0/static/css/0.e1f592d8.chunk.css" rel="stylesheet"><link href="https://creation.codemao.cn/coconut/web/1.22.0-0/static/css/index.fbac8067.cc290234.chunk.css" rel="stylesheet"></head><body>
+        <style>.loading-ring-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.1s ease;
+}
+
+.loading-ring-container.fade-out {
+    opacity: 0;
+}
+
+.loading-ring {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 8px solid rgba(255, 255, 255, 0.3);
+    border-top: 8px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-number {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    transition: all 0.2s ease; /* 添加过渡动画 */
+}
+
+/* 数字变化的动画效果 */
+.loading-number.change {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 0.8;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}</style>
+       <script>
+
+
+
+window.loadingRing = {
+    element: null,
+    setProgress: function(percent) {
+        if (!this.element) return;
+        const number = this.element.querySelector('.loading-number');
+        if (number) {
+            number.textContent = `${percent}%`;
+            // 触发动画
+            number.classList.add('change');
+            setTimeout(() => {
+                number.classList.remove('change');
+            }, 300); // 动画持续时间
+        }
+    },
+    remove: function() {
+        if (!this.element) return;
+        this.element.classList.add('fade-out');
+        setTimeout(() => {
+            if (this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+            this.element = null;
+        }, 500);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    const loadingElement = document.getElementById('custom-loading-ring');
+    if (loadingElement && window.loadingRing) {
+        window.loadingRing.element = loadingElement;
+    }
+});
+
+
+            try{var url=new URL(window.location.href),title=url.searchParams.get("title");title&&(document.title=title)}catch(t){console.error("Set title error",t)}</script><noscript>You need to enable JavaScript to run this app.</noscript><div id="root"></div><script>!function(e){function t(t){for(var n,o,u=t[0],i=t[1],f=t[2],l=0,d=[];l<u.length;l++)o=u[l],Object.prototype.hasOwnProperty.call(a,o)&&a[o]&&d.push(a[o][0]),a[o]=0;for(n in i)Object.prototype.hasOwnProperty.call(i,n)&&(e[n]=i[n]);for(s&&s(t);d.length;)d.shift()();return c.push.apply(c,f||[]),r()}function r(){for(var e,t=0;t<c.length;t++){for(var r=c[t],n=!0,o=1;o<r.length;o++){var i=r[o];0!==a[i]&&(n=!1)}n&&(c.splice(t--,1),e=u(u.s=r[0]))}return e}var n={},o={8:0},a={8:0},c=[];function u(t){if(n[t])return n[t].exports;var r=n[t]={i:t,l:!1,exports:{}};return e[t].call(r.exports,r,r.exports,u),r.l=!0,r.exports}u.e=function(e){var t=[];o[e]?t.push(o[e]):0!==o[e]&&{12:1}[e]&&t.push(o[e]=new Promise((function(t,r){for(var n="static/css/"+({}[e]||e)+"."+{1:"31d6cfe0",3:"31d6cfe0",10:"31d6cfe0",12:"cc39a23f",13:"31d6cfe0",14:"31d6cfe0",15:"31d6cfe0",16:"31d6cfe0",18:"31d6cfe0",19:"31d6cfe0"}[e]+".chunk.css",a=u.p+n,c=document.getElementsByTagName("link"),i=0;i<c.length;i++){var f=(s=c[i]).getAttribute("data-href")||s.getAttribute("href");if("stylesheet"===s.rel&&(f===n||f===a))return t()}var l=document.getElementsByTagName("style");for(i=0;i<l.length;i++){var s;if((f=(s=l[i]).getAttribute("data-href"))===n||f===a)return t()}var d=document.createElement("link");d.rel="stylesheet",d.type="text/css",d.onload=t,d.onerror=function(t){var n=t&&t.target&&t.target.src||a,c=new Error("Loading CSS chunk "+e+" failed.\n("+n+")");c.code="CSS_CHUNK_LOAD_FAILED",c.request=n,delete o[e],d.parentNode.removeChild(d),r(c)},d.href=a,document.getElementsByTagName("head")[0].appendChild(d)})).then((function(){o[e]=0})));var r=a[e];if(0!==r)if(r)t.push(r[2]);else{var n=new Promise((function(t,n){r=a[e]=[t,n]}));t.push(r[2]=n);var c,i=document.createElement("script");i.charset="utf-8",i.timeout=120,u.nc&&i.setAttribute("nonce",u.nc),i.src=function(e){return u.p+"static/js/"+({}[e]||e)+"."+{1:"0a39e0d2",3:"b4877d81",10:"ad83d216",12:"30ab92e6",13:"97938962",14:"d5959b2f",15:"ad8cc2f9",16:"fe1d0c09",18:"7250e51c",19:"d29a2763"}[e]+".chunk.js"}(e);var f=new Error;c=function(t){i.onerror=i.onload=null,clearTimeout(l);var r=a[e];if(0!==r){if(r){var n=t&&("load"===t.type?"missing":t.type),o=t&&t.target&&t.target.src;f.message="Loading chunk "+e+" failed.\n("+n+": "+o+")",f.name="ChunkLoadError",f.type=n,f.request=o,r[1](f)}a[e]=void 0}};var l=setTimeout((function(){c({type:"timeout",target:i})}),12e4);i.onerror=i.onload=c,document.head.appendChild(i)}return Promise.all(t)},u.m=e,u.c=n,u.d=function(e,t,r){u.o(e,t)||Object.defineProperty(e,t,{enumerable:!0,get:r})},u.r=function(e){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},u.t=function(e,t){if(1&t&&(e=u(e)),8&t)return e;if(4&t&&"object"==typeof e&&e&&e.__esModule)return e;var r=Object.create(null);if(u.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:e}),2&t&&"string"!=typeof e)for(var n in e)u.d(r,n,function(t){return e[t]}.bind(null,n));return r},u.n=function(e){var t=e&&e.__esModule?function(){return e.default}:function(){return e};return u.d(t,"a",t),t},u.o=function(e,t){return Object.prototype.hasOwnProperty.call(e,t)},u.p="https://creation.codemao.cn/coconut/web/1.22.0-0/",u.oe=function(e){throw console.error(e),e};var i=this.webpackJsonpappcraft=this.webpackJsonpappcraft||[],f=i.push.bind(i);i.push=t,i=i.slice();for(var l=0;l<i.length;l++)t(i[l]);var s=f;r()}([])</script><script src="https://static.codemao.cn/pickduck/B11Wg-qOxg.js?hash=luN3e-WnxaoyI-T6C6oQ8ARi1WVs"></script><script src="https://creation.codemao.cn/coconut/web/1.22.0-0/static/js/2.ee479bf3.chunk.js"></script><script src="https://www.lihouse.xyz/coco_widget/omnia/output.js"></script>
+            
+             
+             
+            <script>
+</script>
+            
+            </body></html>
