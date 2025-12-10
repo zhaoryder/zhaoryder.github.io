@@ -1,0 +1,10 @@
+{"crs":
+    {"properties":
+        {"name":"EPSG:4326"},"type":"name"
+    },
+"features":
+    [
+        {"geometry":
+            {"type":"Point",
+            "coordinates":[114.14935,22.28871]},
+            "properties":{},"type":"Feature"},{"geometry":{"type":"Point","coordinates":[114.16919,22.3124]},"properties":{},"type":"Feature"},{"geometry":{"type":"Point","coordinates":[114.17212,22.30207]},"properties":{},"type":"Feature"},{"geometry":{"type":"Point","coordinates":[114.17,22.30834]},"properties":{},"type":"Feature"}],"name":"OLDBUILDINGS","type":"FeatureCollection"}
