@@ -1,0 +1,122 @@
+
+ html {
+  height: 100%;
+  background-color: #87CEEB;
+}
+
+ .header {
+  color: white;
+  padding: 10px;
+  text-align: center;
+}
+
+ .header h1 {
+    margin: 0;
+    color: rgb(1, 125, 234);
+    font-size: 60px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+  }
+
+ .header h2 {
+    margin: 0;
+    color: rgb(30, 150, 255);
+    font-size: 69px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-style: italic;
+    transform: skewX(3deg);
+  }
+
+ .content-sz {
+    padding: 20px;
+    background-color: rgb(173, 232, 224);
+    border-radius: 10px;
+    margin: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+  }
+
+ .content-cd {
+    padding: 20px;
+    background-color: rgb(255, 182, 193);
+    border-radius: 10px;
+    margin: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    margin-bottom: 100px;
+  }
+
+  .score {
+    font-size: 60px;
+    font-weight: bold;
+    color: #1E90FF;
+    margin-bottom: 30px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0px;
+    margin: 0px;
+    padding: 0px;
+    line-height: 1;
+  }
+   
+  .match-info {
+        font-size: 18px;
+        color: #555;
+        margin-bottom: 10px;
+        text-align: center;
+        margin: 0px;
+        padding: 0px;
+        line-height: 1;
+         
+    }
+
+.score .sz {
+    color: #124b85;
+    margin-right: 20px;
+}
+
+ .score .cd {
+    color: #ae1919;
+    margin-left: 20px;
+}
+
+ .score .vs {
+    color: #555;
+    margin: 0 10px;
+    font-size: 100px;
+}
+
+ .standsz {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 10px;
+    text-align: center;
+    margin: 0px;
+    padding: 0px;
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+ .standsz button{
+    background-color: #1E90FF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+    text-decoration: none;
+    width: 300px;
+    height: 100px;
+    display: inline-block;
+    border-radius: 30px;
+}
+
+ .standsz button:hover {
+    background-color: #124b85;
+}
+
