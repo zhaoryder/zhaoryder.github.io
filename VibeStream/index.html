@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VibeStream - 短视频平台</title>
+    <style>
+        :root {
+            --bg: #000;
+            --surface: #1a1a2e;
+            --surface2: #16213e;
+            --accent: #ff2d55;
+            --accent2: #ff6b6b;
+            --gold: #ffd700;
+            --text: #fff;
+            --text2: #ccc;
+            --text3: #999;
+            --nav-height: 56px;
+            --safe-bottom: env(safe-area-inset-bottom, 8px);
+            --transition-speed: 0.35s;
+            --bounce: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        *::-webkit-scrollbar {
+            display: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: var(--text);
+            touch-action: pan-y;
+            -webkit-overflow-scrolling: touch;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* ============ 主容器 ============ */
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+        }
+        @media(min-width:768px) {
+            #app {
+                border-left: 1px solid #222;
+                border-right: 1px solid #222;
+                box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+            }
+        }
+
+        /* ============ 视频播放区 ============ */
+        #video-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+            z-index: 1;
+        }
+        #video-list {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: transform var(--transition-speed) var(--bounce);
+            will-change: transform;
+        }
+        .video-item {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .video-item canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.55) 0%, transparent 35%, transparent 65%, rgba(0, 0, 0, 0.25) 100%);
+        }
+        /* 双击点赞心形 */
+        .heart-burst {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            animation: heartBurst 1s ease-out forwards;
+            font-size: 80px;
+            opacity: 0;
+            transform: scale(0.3);
+        }
+        @keyframes heartBurst {
+            0% {
+                opacity: 1;
+                transform: scale(0.3) translateY(0);
+            }
+            25% {
+                opacity: 1;
+                transform: scale(1.2) translateY(-20px);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) translateY(-180px);
+            }
+        }
+
+        /* ============ 顶部标签栏 ============ */
+        #top-bar {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            right: 0;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            pointer-events: none;
+            padding: 0 16px;
+        }
+        #top-bar>* {
+            pointer-events: auto;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 18px;
+            border-radius: 20px;
+            transition: all 0.25s;
+            position: relative;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .tab-btn.active {
+            color: #fff;
+            font-weight: 700;
+            font-size: 17px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 22px;
+            height: 3px;
+            background: #fff;
+            border-radius: 2px;
+        }
+        .tab-indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff2d55;
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            animation: pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scale(1.8);
+            }
+        }
+
+        #search-btn-top {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: auto;
+        }
+        #search-btn-top:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        /* ============ 右侧操作栏 ============ */
+        #action-bar {
+            position: absolute;
+            right: 12px;
+            bottom: 160px;
+            z-index: 15;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            pointer-events: none;
+        }
+        #action-bar>* {
+            pointer-events: auto;
+        }
+        .action-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .action-item:active {
+            transform: scale(0.88);
+        }
+        .action-icon-wrap {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transition: all 0.25s;
+            position: relative;
+        }
+        .action-icon-wrap.liked {
+            background: rgba(255, 45, 85, 0.6);
+            box-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
+        }
+        .action-icon-wrap.favorited {
+            background: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+        .action-icon {
+            width: 26px;
+            height: 26px;
+            fill: #fff;
+            transition: all 0.25s;
+        }
+        .action-label {
+            font-size: 11px;
+            color: #fff;
+            font-weight: 500;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+            letter-spacing: 0.3px;
+        }
+        .action-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            object-fit: cover;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .action-avatar:active {
+            transform: scale(0.9);
+            border-color: #ff2d55;
+        }
+        .follow-plus {
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            background: #ff2d55;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            border: 2px solid #000;
+            transition: all 0.25s;
+            line-height: 1;
+        }
+        .follow-plus.following {
+            background: #666;
+            font-size: 10px;
+        }
+
+        /* ============ 底部视频信息 ============ */
+        #video-info {
+            position: absolute;
+            left: 14px;
+            right: 70px;
+            bottom: 100px;
+            z-index: 15;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #video-info>* {
+            pointer-events: auto;
+        }
+        .info-username {
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .info-username .verified {
+            width: 16px;
+            height: 16px;
+            background: #1d9bf0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .info-desc {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.4;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .info-music {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            animation: marquee-scroll 4s linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes marquee-scroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-30px);
+            }
+        }
+        .music-icon-anim {
+            display: inline-block;
+            animation: music-wave 0.6s ease-in-out infinite alternate;
+        }
+        @keyframes music-wave {
+            0% {
+                transform: scaleY(0.6);
+            }
+            100% {
+                transform: scaleY(1.3);
+            }
+        }
+
+        /* ============ 底部导航栏 ============ */
+        #bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 25;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 6px 0 var(--safe-bottom);
+            border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+            height: var(--nav-height);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: rgba(255, 255, 255, 0.5);
+            background: none;
+            border: none;
+            font-size: 10px;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .nav-item.active {
+            color: #fff;
+            font-weight: 700;
+        }
+        .nav-item.active .nav-icon {
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+        }
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            transition: all 0.25s;
+        }
+        .nav-create-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff2d55, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 4px 16px rgba(255, 45, 85, 0.5);
+            position: relative;
+            top: -8px;
+            border: 3px solid #000;
+        }
+        .nav-create-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 2px 8px rgba(255, 45, 85, 0.6);
+        }
+        .nav-badge {
+            position: absolute;
+            top: -2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            background: #ff2d55;
+            border-radius: 50%;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            border: 2px solid #000;
+            animation: badge-pulse 2s infinite;
+        }
+        @keyframes badge-pulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.25);
+            }
+        }
+
+        /* ============ 评论区面板 ============ */
+        #comment-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            background: rgba(20, 20, 30, 0.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 20px 20px 0 0;
+            transform: translateY(100%);
+            transition: transform var(--transition-speed) var(--bounce);
+            max-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+            pointer-events: auto;
+        }
+        #comment-panel.open {
+            transform: translateY(0);
+        }
+        #comment-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+        #comment-panel-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        #comment-close {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        #comment-close:active {
+            background: rgba(255, 255, 255, 0.25);
+            transform: rotate(90deg);
+        }
+        #comment-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .comment-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            animation: fadeInUp 0.35s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .comment-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .comment-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .comment-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #ddd;
+        }
+        .comment-text {
+            font-size: 13px;
+            color: #bbb;
+            line-height: 1.4;
+            margin-top: 2px;
+            word-break: break-word;
+        }
+        .comment-time {
+            font-size: 10px;
+            color: #777;
+            margin-top: 3px;
+        }
+        .comment-like-mini {
+            font-size: 11px;
+            color: #999;
+            cursor: pointer;
+            margin-left: auto;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            transition: color 0.2s;
+        }
+        .comment-like-mini:hover {
+            color: #ff2d55;
+        }
+        #comment-input-area {
+            display: flex;
+            gap: 10px;
+            padding: 10px 16px;
+            border-top: 0.5px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            align-items: center;
+        }
+        #comment-input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 22px;
+            padding: 10px 16px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.25s;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        #comment-input:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.13);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
+        }
+        #comment-submit {
+            background: #ff2d55;
+            border: none;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 22px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        #comment-submit:active {
+            transform: scale(0.93);
+            background: #e02848;
+        }
+
+        /* ============ 分享面板 ============ */
+        #share-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 31;
+            background: rgba(20, 20, 30, 0.97);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 20px 20px 0 0;
+            transform: translateY(100%);
+            transition: transform var(--transition-speed) var(--bounce);
+            padding: 20px 16px;
+            box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+        }
+        #share-panel.open {
+            transform: translateY(0);
+        }
+        #share-panel h3 {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+        }
+        #share-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+        }
+        .share-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 10px;
+            border-radius: 12px;
+            min-width: 60px;
+        }
+        .share-option:active {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(0.9);
+        }
+        .share-icon-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .share-label {
+            font-size: 11px;
+            color: #bbb;
+        }
+        #share-cancel {
+            display: block;
+            margin: 16px auto 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            padding: 10px 40px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        #share-cancel:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ============ 搜索页 ============ */
+        #search-page {
+            position: absolute;
+            inset: 0;
+            z-index: 35;
+            background: #0a0a14;
+            transform: translateY(100%);
+            transition: transform var(--transition-speed) var(--bounce);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+        #search-page.open {
+            transform: translateY(0);
+        }
+        #search-page-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+        }
+        #search-input-page {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 10px 16px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        #search-input-page:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        #search-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #search-trending {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #search-trending h4 {
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+        .trending-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 8px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+            color: #fff;
+        }
+        .trending-item:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .trending-rank {
+            font-weight: 700;
+            font-size: 16px;
+            color: #ff2d55;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .trending-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .trending-tag {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .trending-views {
+            font-size: 11px;
+            color: #777;
+            margin-top: 2px;
+        }
+
+        /* ============ 通知页 ============ */
+        #notif-page {
+            position: absolute;
+            inset: 0;
+            z-index: 35;
+            background: #0a0a14;
+            transform: translateY(100%);
+            transition: transform var(--transition-speed) var(--bounce);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+        }
+        #notif-page.open {
+            transform: translateY(0);
+        }
+        #notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+        #notif-header h3 {
+            font-size: 18px;
+            letter-spacing: 0.5px;
+        }
+        #notif-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #notif-list {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .notif-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+        }
+        .notif-item:active {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .notif-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .notif-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .notif-text {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #ccc;
+        }
+        .notif-text strong {
+            color: #fff;
+        }
+        .notif-time {
+            font-size: 10px;
+            color: #666;
+            margin-top: 3px;
+        }
+        .notif-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff2d55;
+            flex-shrink: 0;
+        }
+
+        /* ============ 个人主页 ============ */
+        #profile-page {
+            position: absolute;
+            inset: 0;
+            z-index: 35;
+            background: #0a0a14;
+            transform: translateY(100%);
+            transition: transform var(--transition-speed) var(--bounce);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #profile-page.open {
+            transform: translateY(0);
+        }
+        #profile-header-section {
+            padding: 20px 16px;
+            text-align: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+        #profile-back {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .profile-avatar-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #fff;
+            border: 3px solid #333;
+        }
+        .profile-name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .profile-bio {
+            font-size: 13px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 14px;
+        }
+        .profile-stat {
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .profile-stat-num {
+            font-weight: 700;
+            font-size: 18px;
+        }
+        .profile-stat-label {
+            font-size: 11px;
+            color: #888;
+        }
+        .profile-edit-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .profile-edit-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        #profile-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+        }
+        .profile-thumb {
+            aspect-ratio: 9/16;
+            cursor: pointer;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .profile-thumb:active {
+            opacity: 0.7;
+        }
+        .profile-thumb-inner {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ============ Toast提示 ============ */
+        #toast {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s var(--bounce);
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* ============ 遮罩层 ============ */
+        #overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 28;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.35s;
+        }
+        #overlay.active {
+            pointer-events: auto;
+            opacity: 1;
+        }
+
+        /* ============ 响应式微调 ============ */
+        @media(min-width:768px) {
+            #action-bar {
+                right: calc(50% - 230px);
+            }
+            #video-info {
+                left: calc(50% - 230px);
+                right: calc(50% - 170px);
+            }
+            #top-bar {
+                left: calc(50% - 230px);
+                right: calc(50% - 230px);
+            }
+        }
+        @media(max-width:350px) {
+            #action-bar {
+                right: 4px;
+                gap: 14px;
+            }
+            .action-icon-wrap {
+                width: 38px;
+                height: 38px;
+            }
+            .action-icon {
+                width: 22px;
+                height: 22px;
+            }
+            .action-label {
+                font-size: 10px;
+            }
+            #video-info {
+                left: 8px;
+                right: 55px;
+                bottom: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- 视频播放区 -->
+        <div id="video-container">
+            <div id="video-list"></div>
+            <div class="video-overlay"></div>
+
+            <!-- 顶部标签 -->
+            <div id="top-bar">
+                <button class="tab-btn active" data-tab="recommend">推荐</button>
+                <button class="tab-btn" data-tab="following">关注</button>
+                <button id="search-btn-top" title="搜索">🔍</button>
+            </div>
+
+            <!-- 右侧操作栏 -->
+            <div id="action-bar">
+                <div class="action-item" id="action-avatar-wrap">
+                    <div class="action-avatar" id="action-avatar">L</div>
+                    <span class="follow-plus" id="follow-plus-btn">+</span>
+                </div>
+                <div class="action-item" id="action-like">
+                    <div class="action-icon-wrap" id="like-icon-wrap">
+                        <svg class="action-icon" viewBox="0 0 24 24"><path fill="white" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                    </div>
+                    <span class="action-label" id="like-count">0</span>
+                </div>
+                <div class="action-item" id="action-comment">
+                    <div class="action-icon-wrap">
+                        <svg class="action-icon" viewBox="0 0 24 24"><path fill="white" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+                    </div>
+                    <span class="action-label" id="comment-count">0</span>
+                </div>
+                <div class="action-item" id="action-share">
+                    <div class="action-icon-wrap">
+                        <svg class="action-icon" viewBox="0 0 24 24"><path fill="white" d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                    </div>
+                    <span class="action-label">分享</span>
+                </div>
+                <div class="action-item" id="action-favorite">
+                    <div class="action-icon-wrap" id="fav-icon-wrap">
+                        <svg class="action-icon" viewBox="0 0 24 24"><path fill="white" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                    </div>
+                    <span class="action-label">收藏</span>
+                </div>
+            </div>
+
+            <!-- 视频信息 -->
+            <div id="video-info">
+                <div class="info-username" id="info-username">
+                    <span id="info-username-text">@用户</span>
+                    <span class="verified">✓</span>
+                </div>
+                <div class="info-desc" id="info-desc">视频描述...</div>
+                <div class="info-music" id="info-music">
+                    <span class="music-icon-anim">🎵</span> <span id="info-music-text">原声·音乐名称</span>
+                </div>
+            </div>
+
+            <!-- 底部导航 -->
+            <div id="bottom-nav">
+                <button class="nav-item active" data-page="home">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <span>首页</span>
+                </button>
+                <button class="nav-item" data-page="discover">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                    <span>发现</span>
+                </button>
+                <div class="nav-create-btn" id="nav-create-btn" title="发布">
+                    <svg width="22" height="22" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" stroke="white" stroke-width="3" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>
+                </div>
+                <button class="nav-item" data-page="notifications">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span>消息</span>
+                    <span class="nav-badge" id="notif-badge" style="display:none;">3</span>
+                </button>
+                <button class="nav-item" data-page="profile">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span>我</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 评论区 -->
+        <div id="comment-panel">
+            <div id="comment-panel-header">
+                <h3>💬 评论 <span id="comment-total-count">0</span></h3>
+                <button id="comment-close">✕</button>
+            </div>
+            <div id="comment-list"></div>
+            <div id="comment-input-area">
+                <input type="text" id="comment-input" placeholder="说点什么..." maxlength="200">
+                <button id="comment-submit">发送</button>
+            </div>
+        </div>
+
+        <!-- 分享面板 -->
+        <div id="share-panel">
+            <h3>📤 分享到</h3>
+            <div id="share-grid">
+                <div class="share-option"><div class="share-icon-circle" style="background:#25D366;">💬</div><span class="share-label">微信</span></div>
+                <div class="share-option"><div class="share-icon-circle" style="background:#1DA1F2;">🐦</div><span class="share-label">Twitter</span></div>
+                <div class="share-option"><div class="share-icon-circle" style="background:#E4405F;">📷</div><span class="share-label">Instagram</span></div>
+                <div class="share-option"><div class="share-icon-circle" style="background:#FF0000;">▶</div><span class="share-label">YouTube</span></div>
+                <div class="share-option"><div class="share-icon-circle" style="background:#5865F2;">💬</div><span class="share-label">Discord</span></div>
+                <div class="share-option"><div class="share-icon-circle" style="background:#999;">🔗</div><span class="share-label">复制链接</span></div>
+            </div>
+            <button id="share-cancel">取消</button>
+        </div>
+
+        <!-- 遮罩 -->
+        <div id="overlay"></div>
+
+        <!-- 搜索页 -->
+        <div id="search-page">
+            <div id="search-page-header">
+                <button id="search-back">✕</button>
+                <input type="text" id="search-input-page" placeholder="🔍 搜索用户、话题、音乐...">
+            </div>
+            <div id="search-trending">
+                <h4>🔥 热门趋势</h4>
+                <div class="trending-item"><span class="trending-rank">1</span><div class="trending-info"><div class="trending-tag">#夏日狂欢</div><div class="trending-views">2.3亿次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">2</span><div class="trending-info"><div class="trending-tag">#舞蹈挑战</div><div class="trending-views">1.8亿次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">3</span><div class="trending-info"><div class="trending-tag">#美食探店</div><div class="trending-views">1.5亿次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">4</span><div class="trending-info"><div class="trending-tag">#萌宠日常</div><div class="trending-views">1.2亿次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">5</span><div class="trending-info"><div class="trending-tag">#旅行日记</div><div class="trending-views">9800万次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">6</span><div class="trending-info"><div class="trending-tag">#翻唱经典</div><div class="trending-views">7600万次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">7</span><div class="trending-info"><div class="trending-tag">#搞笑日常</div><div class="trending-views">6500万次观看</div></div></div>
+                <div class="trending-item"><span class="trending-rank">8</span><div class="trending-info"><div class="trending-tag">#科技前沿</div><div class="trending-views">5200万次观看</div></div></div>
+            </div>
+        </div>
+
+        <!-- 通知页 -->
+        <div id="notif-page">
+            <div id="notif-header">
+                <h3>🔔 消息</h3>
+                <button id="notif-back">✕</button>
+            </div>
+            <div id="notif-list">
+                <div class="notif-item"><div class="notif-avatar">小</div><div class="notif-content"><div class="notif-text"><strong>小甜甜</strong> 赞了你的视频</div><div class="notif-time">2分钟前</div></div><div class="notif-dot"></div></div>
+                <div class="notif-item"><div class="notif-avatar" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">大</div><div class="notif-content"><div class="notif-text"><strong>大海星辰</strong> 关注了你</div><div class="notif-time">15分钟前</div></div><div class="notif-dot"></div></div>
+                <div class="notif-item"><div class="notif-avatar" style="background:linear-gradient(135deg,#fa709a,#fee140);">美</div><div class="notif-content"><div class="notif-text"><strong>美食家小王</strong> 评论了你的视频："太棒了！"</div><div class="notif-time">1小时前</div></div></div>
+                <div class="notif-item"><div class="notif-avatar" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);">星</div><div class="notif-content"><div class="notif-text"><strong>星空探索者</strong> 分享了你的视频</div><div class="notif-time">3小时前</div></div></div>
+                <div class="notif-item"><div class="notif-avatar" style="background:linear-gradient(135deg,#ffecd2,#fcb69f);">乐</div><div class="notif-content"><div class="notif-text"><strong>快乐小鱼</strong> 收藏了你的视频</div><div class="notif-time">昨天</div></div></div>
+            </div>
+        </div>
+
+        <!-- 个人主页 -->
+        <div id="profile-page">
+            <div id="profile-header-section">
+                <button id="profile-back">✕</button>
+                <div class="profile-avatar-lg">我</div>
+                <div class="profile-name">@我的账号</div>
+                <div class="profile-bio">✨ 记录美好生活 | VibeStream创作者</div>
+                <div class="profile-stats">
+                    <div class="profile-stat"><div class="profile-stat-num">128</div><div class="profile-stat-label">作品</div></div>
+                    <div class="profile-stat"><div class="profile-stat-num">4.2万</div><div class="profile-stat-label">粉丝</div></div>
+                    <div class="profile-stat"><div class="profile-stat-num">89</div><div class="profile-stat-label">关注</div></div>
+                </div>
+                <button class="profile-edit-btn">编辑资料</button>
+            </div>
+            <div id="profile-grid"></div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast"></div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 平台数据 ====================
+            const videoData = [{
+                id: 1,
+                user: '@dancer_lily',
+                userInitial: '莉',
+                avatarBg: 'linear-gradient(135deg,#ff6b6b,#ee5a24)',
+                desc: '✨ 新舞蹈挑战！一起来跳吧～ #舞蹈 #潮流',
+                music: '🎵 原声·Electric Beats',
+                likes: 28400,
+                liked: false,
+                comments: 1256,
+                favorited: false,
+                commentList: [
+                    { user: '小甜甜', initial: '甜',
+                        bg: 'linear-gradient(135deg,#f093fb,#f5576c)', text: '跳得太好了！👏',
+                        time: '2小时前', likes: 234 },
+                    { user: '舞蹈达人', initial: '舞', bg: 'linear-gradient(135deg,#4facfe,#00f2fe)',
+                        text: '求教程！🙏', time: '5小时前', likes: 89 },
+                    { user: '路人甲', initial: '路', bg: 'linear-gradient(135deg,#a8edea,#fed6e3)',
+                        text: '节奏感好强！', time: '1天前', likes: 45 },
+                ],
+                animationType: 'neon',
+            }, {
+                id: 2,
+                user: '@chef_master',
+                userInitial: '厨',
+                avatarBg: 'linear-gradient(135deg,#f7971e,#ffd200)',
+                desc: '🍜 秘制红烧肉，肥而不腻，入口即化！ #美食 #烹饪',
+                music: '🎵 原声·Cooking Vibes',
+                likes: 56200,
+                liked: true,
+                comments: 3421,
+                favorited: false,
+                commentList: [
+                    { user: '吃货一号', initial: '吃', bg: 'linear-gradient(135deg,#fa709a,#fee140)',
+                        text: '看饿了😋', time: '30分钟前', likes: 567 },
+                    { user: '厨房小白', initial: '厨', bg: 'linear-gradient(135deg,#ffecd2,#fcb69f)',
+                        text: '能出详细教程吗？', time: '3小时前', likes: 321 },
+                ],
+                animationType: 'warm',
+            }, {
+                id: 3,
+                user: '@travel_bug',
+                userInitial: '旅',
+                avatarBg: 'linear-gradient(135deg,#1e90ff,#00ced1)',
+                desc: '🌊 马尔代夫的海，治愈一切不开心 #旅行 #海岛',
+                music: '🎵 原声·Ocean Whisper',
+                likes: 89300,
+                liked: false,
+                comments: 5678,
+                favorited: true,
+                commentList: [
+                    { user: '背包客', initial: '背', bg: 'linear-gradient(135deg,#667eea,#764ba2)',
+                        text: '太美了！列入计划！', time: '1小时前', likes: 890 },
+                    { user: '摄影师阿杰', initial: '杰', bg: 'linear-gradient(135deg,#89f7fe,#66a6ff)',
+                        text: '构图绝了📸', time: '6小时前', likes: 445 },
+                ],
+                animationType: 'ocean',
+            }, {
+                id: 4,
+                user: '@music_prodigy',
+                userInitial: '音',
+                avatarBg: 'linear-gradient(135deg,#8e2de2,#4a00e0)',
+                desc: '🎹 原创钢琴曲《星夜》，希望你喜欢 #音乐 #原创',
+                music: '🎵 原声·Starry Night',
+                likes: 45100,
+                liked: false,
+                comments: 2100,
+                favorited: false,
+                commentList: [
+                    { user: '音乐爱好者', initial: '乐', bg: 'linear-gradient(135deg,#d299c2,#fef9d7)',
+                        text: '好听到哭😭', time: '20分钟前', likes: 678 },
+                    { user: '钢琴老师', initial: '琴', bg: 'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+                        text: '和弦编配很巧妙', time: '4小时前', likes: 234 },
+                ],
+                animationType: 'audioViz',
+            }, {
+                id: 5,
+                user: '@pet_lovers',
+                userInitial: '宠',
+                avatarBg: 'linear-gradient(135deg,#ff9a9e,#fecfef)',
+                desc: '🐱 我家猫咪的日常，萌翻了！ #宠物 #猫咪',
+                music: '🎵 原声·Cute Meow',
+                likes: 120500,
+                liked: true,
+                comments: 8900,
+                favorited: true,
+                commentList: [
+                    { user: '猫奴一枚', initial: '猫', bg: 'linear-gradient(135deg,#ffb6c1,#ffc3a0)',
+                        text: 'awsl！太可爱了🥰', time: '5分钟前', likes: 1200 },
+                    { user: '宠物博主', initial: '博', bg: 'linear-gradient(135deg,#e0c3fc,#8ec5fc)',
+                        text: '什么品种呀？', time: '1小时前', likes: 456 },
+                    { user: '爱心人士', initial: '爱', bg: 'linear-gradient(135deg,#f5f7fa,#c3cfe2)',
+                        text: '想抱走！', time: '3小时前', likes: 321 },
+                ],
+                animationType: 'bounce',
+            }, {
+                id: 6,
+                user: '@art_soul',
+                userInitial: '艺',
+                avatarBg: 'linear-gradient(135deg,#f12711,#f5af19)',
+                desc: '🎨 数字艺术创作过程，每一笔都是热爱 #艺术 #创作',
+                music: '🎵 原声·Creative Flow',
+                likes: 33700,
+                liked: false,
+                comments: 1567,
+                favorited: false,
+                commentList: [
+                    { user: '设计师小王', initial: '设', bg: 'linear-gradient(135deg,#434343,#000000)',
+                        text: '大神！求笔刷！', time: '45分钟前', likes: 345 },
+                    { user: '艺术生', initial: '生', bg: 'linear-gradient(135deg,#cfd9df,#e2ebf0)',
+                        text: '学习了！', time: '2小时前', likes: 178 },
+                ],
+                animationType: 'geometric',
+            }];
+
+            // ==================== DOM引用 ====================
+            const app = document.getElementById('app');
+            const videoContainer = document.getElementById('video-container');
+            const videoList = document.getElementById('video-list');
+            const actionAvatar = document.getElementById('action-avatar');
+            const followPlusBtn = document.getElementById('follow-plus-btn');
+            const likeIconWrap = document.getElementById('like-icon-wrap');
+            const likeCount = document.getElementById('like-count');
+            const commentCount = document.getElementById('comment-count');
+            const favIconWrap = document.getElementById('fav-icon-wrap');
+            const infoUsernameText = document.getElementById('info-username-text');
+            const infoDesc = document.getElementById('info-desc');
+            const infoMusicText = document.getElementById('info-music-text');
+            const commentPanel = document.getElementById('comment-panel');
+            const commentList = document.getElementById('comment-list');
+            const commentTotalCount = document.getElementById('comment-total-count');
+            const commentInput = document.getElementById('comment-input');
+            const commentSubmit = document.getElementById('comment-submit');
+            const commentClose = document.getElementById('comment-close');
+            const sharePanel = document.getElementById('share-panel');
+            const shareCancel = document.getElementById('share-cancel');
+            const overlay = document.getElementById('overlay');
+            const toast = document.getElementById('toast');
+            const searchPage = document.getElementById('search-page');
+            const searchBack = document.getElementById('search-back');
+            const searchInputPage = document.getElementById('search-input-page');
+            const notifPage = document.getElementById('notif-page');
+            const notifBack = document.getElementById('notif-back');
+            const notifBadge = document.getElementById('notif-badge');
+            const profilePage = document.getElementById('profile-page');
+            const profileBack = document.getElementById('profile-back');
+            const profileGrid = document.getElementById('profile-grid');
+            const searchBtnTop = document.getElementById('search-btn-top');
+            const navCreateBtn = document.getElementById('nav-create-btn');
+            const topBar = document.getElementById('top-bar');
+
+            // ==================== 状态管理 ====================
+            let currentIndex = 0;
+            let isTransitioning = false;
+            let touchStartY = 0;
+            let touchCurrentY = 0;
+            let touchStartTime = 0;
+            let isSwiping = false;
+            let swipeOffset = 0;
+            let activeAnimations = new Map();
+            let currentTab = 'recommend'; // 'recommend' | 'following'
+            let followedUsers = new Set();
+            let currentPanel = null; // 'comment' | 'share' | null
+
+            // ==================== 初始化视频列表 ====================
+            function buildVideoItems() {
+                videoList.innerHTML = '';
+                videoData.forEach((v, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'video-item';
+                    item.style.top = (i * 100) + '%';
+                    item.dataset.index = i;
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'video-canvas-' + i;
+                    item.appendChild(canvas);
+                    videoList.appendChild(item);
+                });
+                positionVideoList();
+            }
+
+            function positionVideoList() {
+                videoList.style.transform = `translateY(-${currentIndex * 100}%)`;
+            }
+
+            // ==================== Canvas动画引擎 ====================
+            function getCanvas(index) {
+                return document.getElementById('video-canvas-' + index);
+            }
+
+            function startAnimation(index) {
+                if (activeAnimations.has(index)) return;
+                const canvas = getCanvas(index);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const vData = videoData[index];
+                const animType = vData.animationType;
+                let animId;
+                let state = {
+                    time: 0,
+                    particles: [],
+                    phase: Math.random() * Math.PI * 2,
+                };
+
+                function resize() {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    const w = rect.width;
+                    const h = rect.height;
+                    if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+                        canvas.width = w * dpr;
+                        canvas.height = h * dpr;
+                        canvas.style.width = w + 'px';
+                        canvas.style.height = h + 'px';
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.scale(dpr, dpr);
+                        return { w, h };
+                    }
+                    return { w: canvas.width / dpr, h: canvas.height / dpr };
+                }
+
+                function initParticles(w, h, count, colorFn) {
+                    const arr = [];
+                    for (let i = 0; i < count; i++) {
+                        arr.push({
+                            x: Math.random() * w,
+                            y: Math.random() * h,
+                            r: Math.random() * 3 + 1,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2 - 1,
+                            life: Math.random(),
+                            maxLife: 0.6 + Math.random() * 0.4,
+                            color: colorFn ? colorFn() : `hsl(${Math.random()*360},70%,${50+Math.random()*30}%)`,
+                        });
+                    }
+                    return arr;
+                }
+
+                function loop(timestamp) {
+                    const dims = resize();
+                    const w = dims.w;
+                    const h = dims.h;
+                    state.time += 0.016;
+                    ctx.clearRect(0, 0, w, h);
+
+                    switch (animType) {
+                        case 'neon':
+                            drawNeon(ctx, w, h, state);
+                            break;
+                        case 'warm':
+                            drawWarm(ctx, w, h, state);
+                            break;
+                        case 'ocean':
+                            drawOcean(ctx, w, h, state);
+                            break;
+                        case 'audioViz':
+                            drawAudioViz(ctx, w, h, state);
+                            break;
+                        case 'bounce':
+                            drawBounce(ctx, w, h, state);
+                            break;
+                        case 'geometric':
+                            drawGeometric(ctx, w, h, state);
+                            break;
+                        default:
+                            drawNeon(ctx, w, h, state);
+                    }
+                    animId = requestAnimationFrame(loop);
+                }
+
+                // 霓虹舞者
+                function drawNeon(ctx, w, h, s) {
+                    ctx.fillStyle = '#0a0a14';
+                    ctx.fillRect(0, 0, w, h);
+                    const cx = w / 2;
+                    const cy = h / 2;
+                    for (let i = 0; i < 6; i++) {
+                        const hue = (s.time * 60 + i * 60) % 360;
+                        const radius = Math.sin(s.time * 1.3 + i * 1.2) * (w * 0.25) + w * 0.3;
+                        const angle = s.time * 0.8 + i * Math.PI / 3;
+                        const x = cx + Math.cos(angle) * radius * 0.6;
+                        const y = cy + Math.sin(angle * 1.4) * radius * 0.5;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 4 + Math.sin(s.time * 2 + i) * 3, 0, Math.PI * 2);
+                        const grad = ctx.createRadialGradient(x, y, 0, x, y, 40 + Math.sin(s.time + i) * 20);
+                        grad.addColorStop(0, `hsla(${hue},100%,70%,0.9)`);
+                        grad.addColorStop(0.4, `hsla(${hue},100%,50%,0.5)`);
+                        grad.addColorStop(1, 'transparent');
+                        ctx.fillStyle = grad;
+                        ctx.fill();
+                        // 发光轨迹
+                        ctx.strokeStyle = `hsla(${hue},100%,65%,0.35)`;
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x + Math.cos(angle) * 25, y + Math.sin(angle * 1.4) * 20);
+                        ctx.stroke();
+                    }
+                    // 粒子爆发
+                    if (Math.random() < 0.08) {
+                        const burstX = cx + (Math.random() - 0.5) * w * 0.6;
+                        const burstY = cy + (Math.random() - 0.5) * h * 0.6;
+                        for (let j = 0; j < 8; j++) {
+                            ctx.fillStyle = `hsl(${Math.random()*360},100%,70%)`;
+                            ctx.beginPath();
+                            ctx.arc(burstX + (Math.random() - 0.5) * 30, burstY + (Math.random() - 0.5) * 30,
+                                Math.random() * 2.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+
+                // 暖色美食
+                function drawWarm(ctx, w, h, s) {
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
+                    grad.addColorStop(0, '#2d1b00');
+                    grad.addColorStop(0.5, '#4a2000');
+                    grad.addColorStop(1, '#1a0a00');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    for (let i = 0; i < 5; i++) {
+                        const cx = w * 0.5 + Math.sin(s.time * 0.5 + i * 1.5) * w * 0.35;
+                        const cy = h * 0.5 + Math.cos(s.time * 0.7 + i) * h * 0.3;
+                        const r = 50 + Math.sin(s.time + i * 2) * 25;
+                        const glow = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r);
+                        glow.addColorStop(0, `hsla(${30+i*15},100%,60%,0.7)`);
+                        glow.addColorStop(0.5, `hsla(${25+i*10},90%,40%,0.3)`);
+                        glow.addColorStop(1, 'transparent');
+                        ctx.fillStyle = glow;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    // 上升粒子
+                    for (let j = 0; j < 20; j++) {
+                        const px = w * 0.2 + (j * w * 0.03) % (w * 0.6);
+                        const py = h - ((s.time * 40 + j * 30) % (h + 100));
+                        ctx.fillStyle = `hsla(40,90%,${60+Math.random()*30}%,${0.3+Math.random()*0.4})`;
+                        ctx.beginPath();
+                        ctx.arc(px, py, 1.5 + Math.random() * 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // 海洋波浪
+                function drawOcean(ctx, w, h, s) {
+                    const grad = ctx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, '#001a33');
+                    grad.addColorStop(0.5, '#003d66');
+                    grad.addColorStop(1, '#001122');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    for (let wave = 0; wave < 4; wave++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, h * 0.3 + wave * h * 0.15);
+                        for (let x = 0; x <= w; x += 4) {
+                            const y = h * 0.3 + wave * h * 0.15 + Math.sin(x * 0.015 + s.time * 1.5 + wave) * 20 +
+                                Math.cos(x * 0.03 + s.time * 0.9) * 12;
+                            ctx.lineTo(x, y);
+                        }
+                        ctx.lineTo(w, h);
+                        ctx.lineTo(0, h);
+                        ctx.closePath();
+                        ctx.fillStyle = `hsla(${200+wave*10},70%,${35+wave*8}%,0.5)`;
+                        ctx.fill();
+                    }
+                    // 萤火虫
+                    for (let f = 0; f < 15; f++) {
+                        const fx = (Math.sin(s.time * 0.6 + f * 2.3) * 0.5 + 0.5) * w;
+                        const fy = (Math.cos(s.time * 0.8 + f * 1.7) * 0.5 + 0.5) * h;
+                        const fr = 1 + Math.abs(Math.sin(s.time * 3 + f)) * 3;
+                        ctx.fillStyle = `hsla(180,80%,70%,${0.4+Math.abs(Math.sin(s.time*2+f))*0.5})`;
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                        ctx.beginPath();
+                        ctx.arc(fx, fy, fr * 0.4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // 音频可视化
+                function drawAudioViz(ctx, w, h, s) {
+                    ctx.fillStyle = '#0d0015';
+                    ctx.fillRect(0, 0, w, h);
+                    const barCount = 40;
+                    const barWidth = w / barCount;
+                    for (let i = 0; i < barCount; i++) {
+                        const freq = Math.abs(Math.sin(i * 0.3 + s.time * 2.5) * Math.cos(i * 0.15 + s.time * 1.8) *
+                            Math.sin(s.time * 3 + i * 0.5));
+                        const barH = freq * h * 0.7 + h * 0.05;
+                        const hue = 260 + freq * 60;
+                        const grad = ctx.createLinearGradient(0, h - barH, 0, h);
+                        grad.addColorStop(0, `hsla(${hue},100%,${50+freq*40}%,0.9)`);
+                        grad.addColorStop(1, `hsla(${hue},100%,20%,0.3)`);
+                        ctx.fillStyle = grad;
+                        ctx.fillRect(i * barWidth + 1, h - barH, barWidth - 2, barH);
+                        // 顶部光点
+                        ctx.fillStyle = `hsl(${hue},100%,70%)`;
+                        ctx.beginPath();
+                        ctx.arc(i * barWidth + barWidth / 2, h - barH, 2.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // 弹跳可爱
+                function drawBounce(ctx, w, h, s) {
+                    const grad = ctx.createLinearGradient(0, 0, w, h);
+                    grad.addColorStop(0, '#2d1b2e');
+                    grad.addColorStop(0.5, '#3d1a3d');
+                    grad.addColorStop(1, '#1a0a1a');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, w, h);
+                    const circles = [
+                        { x: w * 0.35, y: h * 0.45, r: 45, color: '#ff9a9e', vy: -2.5, ay: 0.15 },
+                        { x: w * 0.6, y: h * 0.55, r: 30, color: '#fecfef', vy: -1.8, ay: 0.12 },
+                        { x: w * 0.45, y: h * 0.35, r: 22, color: '#ffd1d1', vy: -3, ay: 0.18 },
+                    ];
+                    circles.forEach(c => {
+                        c.y += c.vy;
+                        c.vy += c.ay;
+                        if (c.y + c.r > h * 0.75) { c.y = h * 0.75 - c.r;
+                            c.vy = -Math.abs(c.vy) * 0.7; }
+                        if (c.y - c.r < h * 0.2) { c.y = h * 0.2 + c.r;
+                            c.vy = Math.abs(c.vy) * 0.7; }
+                        const glow = ctx.createRadialGradient(c.x, c.y, c.r * 0.1, c.x, c.y, c.r * 1.8);
+                        glow.addColorStop(0, c.color);
+                        glow.addColorStop(0.5, c.color + '88');
+                        glow.addColorStop(1, 'transparent');
+                        ctx.fillStyle = glow;
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.r * 1.8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = c.color;
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                        ctx.beginPath();
+                        ctx.arc(c.x - c.r * 0.25, c.y - c.r * 0.3, c.r * 0.35, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    // 小爪印
+                    if (Math.floor(s.time * 3) % 5 === 0) {
+                        const px = Math.random() * w;
+                        const py = Math.random() * h;
+                        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                        for (let p = 0; p < 4; p++) {
+                            ctx.beginPath();
+                            ctx.arc(px + Math.cos(p * Math.PI / 2) * 10, py + Math.sin(p * Math.PI / 2) * 10, 5, 0,
+                                Math.PI * 2);
+                            ctx.fill();
+                        }
+                        ctx.beginPath();
+                        ctx.arc(px, py + 16, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // 几何艺术
+                function drawGeometric(ctx, w, h, s) {
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillRect(0, 0, w, h);
+                    const shapes = [
+                        { type: 'triangle', cx: w * 0.4, cy: h * 0.4, size: 70, rot: s.time * 1.2,
+                            color: '#ff6b6b' },
+                        { type: 'rect', cx: w * 0.6, cy: h * 0.55, size: 55, rot: -s.time * 0.9,
+                            color: '#4ecdc4' },
+                        { type: 'circle', cx: w * 0.5, cy: h * 0.45, size: 40, rot: s.time * 0.6,
+                            color: '#ffe66d' },
+                        { type: 'hexagon', cx: w * 0.35, cy: h * 0.6, size: 50, rot: s.time * 0.7,
+                            color: '#a29bfe' },
+                    ];
+                    shapes.forEach(sh => {
+                        ctx.save();
+                        ctx.translate(sh.cx, sh.cy);
+                        ctx.rotate(sh.rot);
+                        ctx.fillStyle = sh.color + '99';
+                        ctx.strokeStyle = sh.color;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        switch (sh.type) {
+                            case 'triangle':
+                                ctx.moveTo(0, -sh.size);
+                                ctx.lineTo(sh.size * 0.87, sh.size * 0.5);
+                                ctx.lineTo(-sh.size * 0.87, sh.size * 0.5);
+                                ctx.closePath();
+                                break;
+                            case 'rect':
+                                ctx.rect(-sh.size * 0.7, -sh.size * 0.7, sh.size * 1.4, sh.size * 1.4);
+                                break;
+                            case 'circle':
+                                ctx.arc(0, 0, sh.size, 0, Math.PI * 2);
+                                break;
+                            case 'hexagon':
+                                for (let i = 0; i < 6; i++) {
+                                    const a = (Math.PI / 3) * i;
+                                    const px = Math.cos(a) * sh.size;
+                                    const py = Math.sin(a) * sh.size;
+                                    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+                                }
+                                ctx.closePath();
+                                break;
+                        }
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.restore();
+                    });
+                    // 笔触效果
+                    if (Math.random() < 0.05) {
+                        ctx.strokeStyle = `hsl(${Math.random()*360},80%,50%)`;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        const sx = Math.random() * w;
+                        const sy = Math.random() * h;
+                        ctx.moveTo(sx, sy);
+                        ctx.bezierCurveTo(sx + 30, sy - 20, sx + 60, sy + 30, sx + 40, sy + 50);
+                        ctx.stroke();
+                    }
+                }
+
+                animId = requestAnimationFrame(loop);
+                activeAnimations.set(index, { id: animId, canvas, ctx, state });
+            }
+
+            function stopAnimation(index) {
+                const anim = activeAnimations.get(index);
+                if (anim) {
+                    cancelAnimationFrame(anim.id);
+                    activeAnimations.delete(index);
+                }
+            }
+
+            function stopAllAnimations() {
+                for (const [idx, anim] of activeAnimations) {
+                    cancelAnimationFrame(anim.id);
+                }
+                activeAnimations.clear();
+            }
+
+            function refreshActiveAnimation() {
+                // 停止非当前视频的动画
+                for (const [idx, anim] of activeAnimations) {
+                    if (idx !== currentIndex) {
+                        cancelAnimationFrame(anim.id);
+                        activeAnimations.delete(idx);
+                    }
+                }
+                // 启动当前视频动画
+                if (!activeAnimations.has(currentIndex)) {
+                    startAnimation(currentIndex);
+                }
+            }
+
+            // ==================== UI更新 ====================
+            function updateActionBar() {
+                const v = videoData[currentIndex];
+                likeCount.textContent = formatNumber(v.likes);
+                commentCount.textContent = formatNumber(v.comments);
+                if (v.liked) {
+                    likeIconWrap.classList.add('liked');
+                } else {
+                    likeIconWrap.classList.remove('liked');
+                }
+                if (v.favorited) {
+                    favIconWrap.classList.add('favorited');
+                } else {
+                    favIconWrap.classList.remove('favorited');
+                }
+                actionAvatar.textContent = v.userInitial;
+                actionAvatar.style.background = v.avatarBg;
+                if (followedUsers.has(v.user)) {
+                    followPlusBtn.textContent = '✓';
+                    followPlusBtn.classList.add('following');
+                } else {
+                    followPlusBtn.textContent = '+';
+                    followPlusBtn.classList.remove('following');
+                }
+                infoUsernameText.textContent = v.user;
+                infoDesc.textContent = v.desc;
+                infoMusicText.textContent = v.music;
+                commentTotalCount.textContent = v.comments;
+            }
+
+            function updateCommentPanel() {
+                const v = videoData[currentIndex];
+                commentTotalCount.textContent = v.comments;
+                commentList.innerHTML = '';
+                v.commentList.forEach((c, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'comment-item';
+                    div.style.animationDelay = i * 0.06 + 's';
+                    div.innerHTML = `
+                <div class="comment-avatar" style="background:${c.bg};">${c.initial}</div>
+                <div class="comment-body">
+                  <div class="comment-name">${c.user}</div>
+                  <div class="comment-text">${c.text}</div>
+                  <div class="comment-time">${c.time}</div>
+                </div>
+                <div class="comment-like-mini">❤ ${c.likes}</div>
+              `;
+                    commentList.appendChild(div);
+                });
+            }
+
+            function formatNumber(num) {
+                if (num >= 10000) return (num / 10000).toFixed(1) + '万';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+                return num.toString();
+            }
+
+            function showToast(msg) {
+                toast.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._timeout);
+                toast._timeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 1500);
+            }
+
+            // ==================== 面板管理 ====================
+            function openPanel(panelName) {
+                closeAllPanels();
+                if (panelName === 'comment') {
+                    commentPanel.classList.add('open');
+                    updateCommentPanel();
+                    overlay.classList.add('active');
+                    currentPanel = 'comment';
+                } else if (panelName === 'share') {
+                    sharePanel.classList.add('open');
+                    overlay.classList.add('active');
+                    currentPanel = 'share';
+                }
+            }
+
+            function closeAllPanels() {
+                commentPanel.classList.remove('open');
+                sharePanel.classList.remove('open');
+                overlay.classList.remove('active');
+                currentPanel = null;
+            }
+
+            function closeAllPages() {
+                searchPage.classList.remove('open');
+                notifPage.classList.remove('open');
+                profilePage.classList.remove('open');
+            }
+
+            // ==================== 视频切换 ====================
+            function switchToVideo(index, direction = 0) {
+                if (isTransitioning || index === currentIndex) return;
+                if (index < 0 || index >= videoData.length) return;
+                isTransitioning = true;
+                const oldIndex = currentIndex;
+                currentIndex = index;
+                positionVideoList();
+                updateActionBar();
+                refreshActiveAnimation();
+                closeAllPanels();
+                setTimeout(() => {
+                    isTransitioning = false;
+                }, 350);
+            }
+
+            function nextVideo() {
+                if (currentIndex < videoData.length - 1) {
+                    switchToVideo(currentIndex + 1, 1);
+                } else {
+                    showToast('已经是最后一个视频了~');
+                }
+            }
+
+            function prevVideo() {
+                if (currentIndex > 0) {
+                    switchToVideo(currentIndex - 1, -1);
+                } else {
+                    showToast('已经是第一个视频了~');
+                }
+            }
+
+            // ==================== 触摸/滚轮事件 ====================
+            videoContainer.addEventListener('touchstart', function(e) {
+                if (isTransitioning || currentPanel || searchPage.classList.contains('open') || notifPage
+                    .classList.contains('open') || profilePage.classList.contains('open')) return;
+                if (e.touches.length === 1) {
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                    isSwiping = true;
+                    swipeOffset = 0;
+                    videoList.style.transition = 'none';
+                }
+            }, { passive: true });
+
+            videoContainer.addEventListener('touchmove', function(e) {
+                if (!isSwiping || isTransitioning) return;
+                touchCurrentY = e.touches[0].clientY;
+                swipeOffset = touchCurrentY - touchStartY;
+                const maxOffset = window.innerHeight * 0.6;
+                const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, swipeOffset));
+                const dampedOffset = clampedOffset * 0.85;
+                videoList.style.transform = `translateY(${-currentIndex * 100}% ) translateY(${dampedOffset}px)`;
+            }, { passive: true });
+
+            videoContainer.addEventListener('touchend', function(e) {
+                if (!isSwiping) return;
+                isSwiping = false;
+                videoList.style.transition = `transform var(--transition-speed) var(--bounce)`;
+                const dt = Date.now() - touchStartTime;
+                const velocity = Math.abs(swipeOffset) / Math.max(dt, 1);
+                const threshold = window.innerHeight * 0.15;
+                if (Math.abs(swipeOffset) > threshold || velocity > 0.5) {
+                    if (swipeOffset < -30) {
+                        nextVideo();
+                    } else if (swipeOffset > 30) {
+                        prevVideo();
+                    } else {
+                        positionVideoList();
+                    }
+                } else {
+                    positionVideoList();
+                }
+                swipeOffset = 0;
+                setTimeout(() => {
+                    if (!isTransitioning) positionVideoList();
+                }, 360);
+            });
+
+            // 鼠标滚轮
+            videoContainer.addEventListener('wheel', function(e) {
+                if (isTransitioning || currentPanel || searchPage.classList.contains('open') || notifPage.classList
+                    .contains('open') || profilePage.classList.contains('open')) return;
+                e.preventDefault();
+                if (e.deltaY > 20) {
+                    nextVideo();
+                } else if (e.deltaY < -20) {
+                    prevVideo();
+                }
+            }, { passive: false });
+
+            // 键盘
+            document.addEventListener('keydown', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (searchPage.classList.contains('open') || notifPage.classList.contains('open') || profilePage
+                    .classList.contains('open')) return;
+                if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault();
+                    nextVideo(); }
+                if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault();
+                    prevVideo(); }
+                if (e.key === 'Escape') { closeAllPanels();
+                    closeAllPages(); }
+            });
+
+            // 点击视频切换暂停/播放
+            videoContainer.addEventListener('click', function(e) {
+                if (isTransitioning || isSwiping) return;
+                if (currentPanel || searchPage.classList.contains('open') || notifPage.classList.contains(
+                        'open') || profilePage.classList.contains('open')) return;
+                const target = e.target;
+                if (target.closest('#action-bar') || target.closest('#video-info') || target.closest(
+                        '#top-bar') || target.closest('#bottom-nav') || target.closest('#comment-panel') ||
+                    target.closest('#share-panel') || target.closest('#overlay')) return;
+                // 双击检测
+                const now = Date.now();
+                if (videoContainer._lastClick && now - videoContainer._lastClick < 300) {
+                    // 双击点赞
+                    handleDoubleTapLike(e);
+                    videoContainer._lastClick = 0;
+                    return;
+                }
+                videoContainer._lastClick = now;
+                // 单击切换播放状态
+                togglePlayPause();
+            });
+
+            function handleDoubleTapLike(e) {
+                const v = videoData[currentIndex];
+                if (!v.liked) {
+                    v.liked = true;
+                    v.likes++;
+                    updateActionBar();
+                    showToast('❤ 已点赞');
+                }
+                // 心形爆发动画
+                const heart = document.createElement('div');
+                heart.className = 'heart-burst';
+                heart.textContent = '❤';
+                const rect = videoContainer.getBoundingClientRect();
+                const cx = e.clientX - rect.left;
+                const cy = e.clientY - rect.top;
+                heart.style.left = cx + 'px';
+                heart.style.top = cy + 'px';
+                heart.style.transform = 'translate(-50%,-50%) scale(0.3)';
+                videoContainer.appendChild(heart);
+                requestAnimationFrame(() => {
+                    heart.style.transform = 'translate(-50%,-50%) scale(1.2)';
+                });
+                setTimeout(() => {
+                    heart.style.opacity = '0';
+                    heart.style.transform = 'translate(-50%,-50%) scale(0.8) translateY(-160px)';
+                }, 200);
+                setTimeout(() => heart.remove(), 1000);
+            }
+
+            function togglePlayPause() {
+                const anim = activeAnimations.get(currentIndex);
+                if (anim) {
+                    stopAnimation(currentIndex);
+                    showToast('⏸ 已暂停');
+                    videoContainer._paused = true;
+                } else {
+                    startAnimation(currentIndex);
+                    showToast('▶ 播放中');
+                    videoContainer._paused = false;
+                }
+            }
+
+            // ==================== 按钮事件 ====================
+            // 点赞
+            document.getElementById('action-like').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const v = videoData[currentIndex];
+                v.liked = !v.liked;
+                v.likes += v.liked ? 1 : -1;
+                updateActionBar();
+                showToast(v.liked ? '❤ 已点赞' : '已取消点赞');
+                if (v.liked) {
+                    likeIconWrap.style.transform = 'scale(1.3)';
+                    setTimeout(() => { likeIconWrap.style.transform = 'scale(1)'; }, 200);
+                }
+            });
+
+            // 评论按钮
+            document.getElementById('action-comment').addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (currentPanel === 'comment') {
+                    closeAllPanels();
+                } else {
+                    openPanel('comment');
+                }
+            });
+
+            // 分享按钮
+            document.getElementById('action-share').addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (currentPanel === 'share') {
+                    closeAllPanels();
+                } else {
+                    openPanel('share');
+                }
+            });
+
+            // 收藏按钮
+            document.getElementById('action-favorite').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const v = videoData[currentIndex];
+                v.favorited = !v.favorited;
+                updateActionBar();
+                showToast(v.favorited ? '⭐ 已收藏' : '已取消收藏');
+                if (v.favorited) {
+                    favIconWrap.style.transform = 'scale(1.3)';
+                    setTimeout(() => { favIconWrap.style.transform = 'scale(1)'; }, 200);
+                }
+            });
+
+            // 关注按钮
+            followPlusBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const v = videoData[currentIndex];
+                if (followedUsers.has(v.user)) {
+                    followedUsers.delete(v.user);
+                    showToast('已取消关注');
+                } else {
+                    followedUsers.add(v.user);
+                    showToast('✅ 已关注 ' + v.user);
+                }
+                updateActionBar();
+            });
+
+            // 头像点击
+            document.getElementById('action-avatar-wrap').addEventListener('click', function(e) {
+                e.stopPropagation();
+                openProfilePage();
+            });
+
+            // 关闭面板
+            commentClose.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeAllPanels();
+            });
+            shareCancel.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeAllPanels();
+            });
+            overlay.addEventListener('click', function() {
+                closeAllPanels();
+            });
+
+            // 发送评论
+            commentSubmit.addEventListener('click', function(e) {
+                e.stopPropagation();
+                submitComment();
+            });
+            commentInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitComment();
+                }
+                e.stopPropagation();
+            });
+
+            function submitComment() {
+                const text = commentInput.value.trim();
+                if (!text) return;
+                const v = videoData[currentIndex];
+                v.commentList.unshift({
+                    user: '我',
+                    initial: '我',
+                    bg: 'linear-gradient(135deg,#ff2d55,#ff6b6b)',
+                    text: text,
+                    time: '刚刚',
+                    likes: 0,
+                });
+                v.comments++;
+                commentInput.value = '';
+                updateCommentPanel();
+                updateActionBar();
+                commentTotalCount.textContent = v.comments;
+                showToast('💬 评论已发布');
+            }
+
+            // 分享选项
+            document.querySelectorAll('.share-option').forEach(opt => {
+                opt.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const label = this.querySelector('.share-label').textContent;
+                    showToast('📤 已分享到 ' + label);
+                    setTimeout(closeAllPanels, 600);
+                });
+            });
+
+            // 搜索按钮
+            searchBtnTop.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeAllPanels();
+                searchPage.classList.add('open');
+                setTimeout(() => searchInputPage.focus(), 400);
+            });
+            searchBack.addEventListener('click', function(e) {
+                e.stopPropagation();
+                searchPage.classList.remove('open');
+            });
+            searchInputPage.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    showToast('🔍 搜索: ' + searchInputPage.value);
+                }
+            });
+
+            // 趋势项点击
+            document.querySelectorAll('.trending-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const tag = this.querySelector('.trending-tag').textContent;
+                    showToast('🔍 查看 ' + tag);
+                });
+            });
+
+            // 通知
+            notifBack.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notifPage.classList.remove('open');
+                notifBadge.style.display = 'none';
+            });
+            document.querySelectorAll('.notif-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    showToast('📩 查看详情');
+                });
+            });
+
+            // 个人主页
+            profileBack.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profilePage.classList.remove('open');
+            });
+
+            function openProfilePage() {
+                closeAllPanels();
+                profilePage.classList.add('open');
+                buildProfileGrid();
+            }
+
+            function buildProfileGrid() {
+                profileGrid.innerHTML = '';
+                const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#a29bfe', '#ff9a9e', '#1e90ff', '#f7971e',
+                    '#8e2de2', '#00ced1'
+                ];
+                for (let i = 0; i < 9; i++) {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'profile-thumb';
+                    thumb.innerHTML = `<div class="profile-thumb-inner" style="background:${colors[i]};display:flex;align-items:center;justify-content:center;font-size:28px;color:rgba(255,255,255,0.7);">▶</div>`;
+                    thumb.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        showToast('📺 播放作品 #' + (i + 1));
+                    });
+                    profileGrid.appendChild(thumb);
+                }
+            }
+
+            // 底部导航
+            document.querySelectorAll('#bottom-nav .nav-item').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const page = this.dataset.page;
+                    document.querySelectorAll('#bottom-nav .nav-item').forEach(b => b.classList
+                        .remove('active'));
+                    this.classList.add('active');
+                    closeAllPanels();
+                    if (page === 'home') {
+                        closeAllPages();
+                    } else if (page === 'discover') {
+                        closeAllPages();
+                        searchPage.classList.add('open');
+                        setTimeout(() => searchInputPage.focus(), 400);
+                    } else if (page === 'notifications') {
+                        closeAllPages();
+                        notifPage.classList.add('open');
+                        notifBadge.style.display = 'none';
+                    } else if (page === 'profile') {
+                        closeAllPages();
+                        openProfilePage();
+                    }
+                });
+            });
+
+            // 创建按钮
+            navCreateBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showToast('🎬 打开相机创建视频');
+            });
+
+            // 顶部标签切换
+            document.querySelectorAll('#top-bar .tab-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    document.querySelectorAll('#top-bar .tab-btn').forEach(b => b.classList.remove(
+                        'active'));
+                    this.classList.add('active');
+                    currentTab = this.dataset.tab;
+                    showToast(currentTab === 'recommend' ? '📺 推荐视频' : '👥 关注视频');
+                });
+            });
+
+            // 视频信息点击
+            document.getElementById('info-username').addEventListener('click', function(e) {
+                e.stopPropagation();
+                openProfilePage();
+            });
+            document.getElementById('info-desc').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const v = videoData[currentIndex];
+                showToast('📝 ' + v.desc.substring(0, 30) + '...');
+            });
+            document.getElementById('info-music').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const v = videoData[currentIndex];
+                showToast('🎵 ' + v.music);
+            });
+
+            // 关闭面板的全局点击
+            document.addEventListener('click', function(e) {
+                if (currentPanel && !e.target.closest('#comment-panel') && !e.target.closest(
+                        '#share-panel') && !e.target.closest('#action-comment') && !e.target.closest(
+                        '#action-share')) {
+                    if (!e.target.closest('#overlay') && e.target !== overlay) return;
+                    closeAllPanels();
+                }
+            });
+
+            // ==================== 窗口大小调整 ====================
+            function handleResize() {
+                positionVideoList();
+                // 重启当前动画以适配新尺寸
+                stopAnimation(currentIndex);
+                startAnimation(currentIndex);
+            }
+            window.addEventListener('resize', debounce(handleResize, 300));
+            window.addEventListener('orientationchange', function() {
+                setTimeout(handleResize, 500);
+            });
+
+            function debounce(fn, ms) {
+                let timer;
+                return function(...args) {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => fn.apply(this, args), ms);
+                };
+            }
+
+            // ==================== 初始化 ====================
+            function init() {
+                buildVideoItems();
+                updateActionBar();
+                startAnimation(currentIndex);
+                // 初始显示通知徽章
+                notifBadge.style.display = 'flex';
+                // 预热其他canvas尺寸
+                setTimeout(() => {
+                    for (let i = 0; i < videoData.length; i++) {
+                        if (i !== currentIndex) {
+                            const canvas = getCanvas(i);
+                            if (canvas && canvas.parentElement) {
+                                const rect = canvas.parentElement.getBoundingClientRect();
+                                if (rect.width > 0 && rect.height > 0) {
+                                    canvas.width = rect.width * 2;
+                                    canvas.height = rect.height * 2;
+                                    canvas.style.width = rect.width + 'px';
+                                    canvas.style.height = rect.height + 'px';
+                                }
+                            }
+                        }
+                    }
+                }, 500);
+                console.log('🚀 VibeStream 短视频平台已就绪');
+                console.log('📱 支持触摸滑动 | 🖱 鼠标滚轮 | ⌨ 键盘上下键');
+                console.log('❤ 双击点赞 | 💬 评论互动 | 📤 分享功能');
+                console.log('👆 点击视频暂停/播放');
+                console.log('📹 共加载 ' + videoData.length + ' 个模拟视频');
+            }
+
+            init();
+
+            // ==================== 暴露API ====================
+            window.VibeStream = {
+                getCurrentVideo: () => videoData[currentIndex],
+                getCurrentIndex: () => currentIndex,
+                nextVideo,
+                prevVideo,
+                switchToVideo,
+                togglePlayPause,
+                getVideoData: () => videoData,
+                showToast,
+                version: '1.0.0',
+            };
+
+        })();
+    </script>
+</body>
+</html>
