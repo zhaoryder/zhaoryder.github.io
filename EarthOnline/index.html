@@ -756,7 +756,7 @@
         <div class="log-panel" id="logPanel">
             <h3>📜 人生日志</h3>
             <div id="logEntries">
-                <div class="log-entry neutral">🌟 你的人生开始了！18岁的你站在人生的十字路口，未来充满无限可能。</div>
+                <div class="log-entry neutral">🌟 你的人生开始了！18岁的你站在人生的十字路口，未来充满无限可能！</div>
             </div>
         </div>
 
@@ -1283,7 +1283,7 @@
                 gameState.year++;
 
                 // 随机事件（概率触发）
-                if (Math.random() < 0.45) {
+                if (Math.random() < 0.6) {
                     triggerRandomEvent();
                 }
 
@@ -1387,7 +1387,7 @@
                     ending = 'bankruptcy';
                 }
                 // 到达65岁退休
-                else if (gameState.age >= 65) {
+                else if (gameState.age >= 80) {
                     const wp = getWealthPercent();
                     if (gameState.wealth >= 500) {
                         endingIcon = '👑';
