@@ -1004,7 +1004,7 @@
                 }
 
                 // 社交/关系事件
-                if (social > 60 && gameState.relationship === '单身' && age >= 20 && Math.random() < 0.35) {
+                if (social > 40 && gameState.relationship === '单身' && age >= 20 && Math.random() < 0.45) {
                     events.push({
                         message: '💕 在一次社交活动中，你遇到了让你心动的人，你们开始恋爱了！',
                         effects: { happiness: +12, social: +5, relationship: '恋爱中', relationshipYears: 0 },
@@ -1012,7 +1012,7 @@
                         weight: 4
                     });
                 }
-                if (gameState.relationship === '恋爱中' && gameState.relationshipYears >= 2 && Math.random() < 0.4 &&
+                if (gameState.relationship === '恋爱中' && gameState.relationshipYears >= 2 && Math.random() < 0.5 &&
                     social > 45) {
                     events.push({
                         message: '💍 你和恋人步入婚姻殿堂！人生进入新阶段。',
@@ -1022,7 +1022,7 @@
                     });
                 }
                 if (gameState.relationship === '已婚' && gameState.relationshipYears >= 2 && !gameState.hasChildren && Math
-                    .random() < 0.35) {
+                    .random() < 0.45) {
                     events.push({
                         message: '👶 你们迎来了爱情的结晶！家里多了一个小天使。',
                         effects: { happiness: +10, wealth: -3, hasChildren: true },
@@ -1030,7 +1030,7 @@
                         weight: 3
                     });
                 }
-                if (gameState.relationship === '已婚' && Math.random() < 0.08 && happiness < 30) {
+                if (gameState.relationship === '已婚' && Math.random() < 0.1 && happiness < 30) {
                     events.push({
                         message: '💔 婚姻出现裂痕，你们最终选择了离婚。',
                         effects: { happiness: -18, social: -10, relationship: '单身', relationshipYears: 0,
@@ -1039,7 +1039,7 @@
                         weight: 2
                     });
                 }
-                if (gameState.relationship === '恋爱中' && Math.random() < 0.1 && happiness < 25) {
+                if (gameState.relationship === '恋爱中' && Math.random() < 0.15 && happiness < 25) {
                     events.push({
                         message: '🥀 感情出现危机，你们分手了。',
                         effects: { happiness: -12, social: -5, relationship: '单身', relationshipYears: 0 },
