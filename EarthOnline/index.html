@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🌍 地球Online · 人生重开模拟器 | 命运觉醒版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #0a0e17;
+            font-family: 'Segoe UI', 'Poppins', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            color: #eef5ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px 16px;
+            position: relative;
+        }
+
+        /* 星空 + 装饰 */
+        #starCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-bg {
+            position: fixed;
+            top: -20%;
+            right: -10%;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(77,166,255,0.12), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: drift 20s infinite alternate;
+        }
+        .glow-bg-2 {
+            position: fixed;
+            bottom: -15%;
+            left: -8%;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(240,192,96,0.08), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: drift2 25s infinite alternate;
+        }
+        @keyframes drift {
+            0% { transform: translate(0,0) scale(1); opacity: 0.5;}
+            100% { transform: translate(40px, 30px) scale(1.2); opacity: 0.9;}
+        }
+        @keyframes drift2 {
+            0% { transform: translate(0,0) scale(1); opacity: 0.4;}
+            100% { transform: translate(-30px, -20px) scale(1.3); opacity: 0.7;}
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: rgba(20, 26, 36, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 28px;
+            border: 1px solid rgba(77, 166, 255, 0.25);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            padding: 18px 22px;
+            transition: all 0.2s;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title h1 {
+            font-size: 1.7rem;
+            background: linear-gradient(135deg, #7dd3fc, #a78bfa, #f0c060);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+        .age-badge {
+            background: #1f2a3e;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            border-left: 3px solid #f0c060;
+        }
+
+        /* 属性网格 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .stat-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 8px 12px;
+        }
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #b9c7d9;
+        }
+        .bar-bg {
+            background: #19212b;
+            border-radius: 10px;
+            height: 8px;
+            margin: 6px 0;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+        .extra-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: space-between;
+            background: #0f1620cc;
+            border-radius: 24px;
+            padding: 8px 16px;
+        }
+        .micro-badge {
+            background: #1e2a3a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        /* 行动面板 网格布局 */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .action-btn {
+            background: #1c2538;
+            border: 1px solid #2f3b54;
+            border-radius: 24px;
+            padding: 10px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            cursor: pointer;
+            font-family: inherit;
+            color: white;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+        .action-btn:hover:not(.disabled) {
+            background: #2a3a55;
+            border-color: #4da6ff;
+            transform: translateY(-2px);
+        }
+        .action-btn.disabled {
+            opacity: 0.35;
+            filter: grayscale(0.5);
+            pointer-events: none;
+        }
+        .action-btn .icon-lg {
+            font-size: 1.5rem;
+        }
+        .action-text {
+            text-align: left;
+            font-size: 0.75rem;
+        }
+        .action-name {
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .action-hint {
+            font-size: 0.62rem;
+            color: #94a3b8;
+        }
+
+        /* 新系统面板样式 */
+        .panel-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #1c2538;
+            border: 1px solid #2f3b54;
+            color: #94a3b8;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            background: #2a3a55;
+            border-color: #4da6ff;
+            color: #fff;
+        }
+        .panel-content {
+            display: none;
+        }
+        .panel-content.active {
+            display: block;
+        }
+
+        /* 技能树 */
+        .skill-item {
+            background: #0f1620;
+            border-radius: 14px;
+            padding: 8px 12px;
+            margin: 6px 0;
+            border-left: 3px solid #4da6ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .skill-item.locked {
+            opacity: 0.5;
+            border-left-color: #666;
+        }
+        .skill-item.unlocked {
+            border-left-color: #4ecb71;
+        }
+
+        /* 副业 */
+        .side-job-item {
+            background: #0f1620;
+            border-radius: 14px;
+            padding: 8px 12px;
+            margin: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 旅行 */
+        .travel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .travel-btn {
+            background: #1c2538;
+            border: 1px solid #2f3b54;
+            border-radius: 16px;
+            padding: 10px;
+            cursor: pointer;
+            color: white;
+            font-family: inherit;
+            font-size: 0.75rem;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .travel-btn:hover:not(.disabled) {
+            background: #2a3a55;
+            border-color: #f0c060;
+        }
+        .travel-btn.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* 日志 */
+        .log-area {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .log-line {
+            background: #0f1722;
+            border-left: 3px solid #4da6ff;
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-size: 0.72rem;
+            animation: fadeSlide 0.25s ease;
+        }
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateX(-12px);}
+            to { opacity: 1; transform: translateX(0);}
+        }
+        .btn-reset {
+            background: #ef444420;
+            border: 1px solid #ef4444;
+            color: #ff9f9f;
+            padding: 12px;
+            border-radius: 40px;
+            font-weight: bold;
+            transition: 0.2s;
+            cursor: pointer;
+            width: 100%;
+            font-family: inherit;
+        }
+        .btn-reset:hover {
+            background: #ef444450;
+        }
+
+        /* 天赋选择弹窗 */
+        .talent-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000dd;
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .talent-card {
+            background: #151e2c;
+            border-radius: 32px;
+            max-width: 560px;
+            width: 90%;
+            padding: 28px;
+            border: 1px solid #4da6ff;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .talent-option {
+            background: #1c2538;
+            border: 2px solid #2f3b54;
+            border-radius: 20px;
+            padding: 14px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .talent-option:hover {
+            border-color: #f0c060;
+            background: #253048;
+        }
+        .talent-option.selected {
+            border-color: #4ecb71;
+            background: #1a3020;
+        }
+
+        /* 结局弹窗 */
+        .ending-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000cc;
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ending-card {
+            background: #151e2c;
+            border-radius: 32px;
+            max-width: 520px;
+            width: 85%;
+            padding: 28px;
+            text-align: center;
+            border: 1px solid gold;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* 名人堂 */
+        .hall-row {
+            background: #0f1620;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin: 4px 0;
+            font-size: 0.72rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* 挑战 */
+        .challenge-item {
+            background: #0f1620;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin: 4px 0;
+            font-size: 0.72rem;
+            border-left: 3px solid #f0c060;
+        }
+        .challenge-item.completed {
+            border-left-color: #4ecb71;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 580px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .actions-grid { grid-template-columns: 1fr 1fr; }
+            .card { padding: 14px; }
+            .title h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+<div class="glow-bg"></div>
+<div class="glow-bg-2"></div>
+<div class="game-container" id="app">
+    <div class="card header">
+        <div class="title">
+            <h1>🌍 地球Online · 命运觉醒</h1>
+            <div style="font-size:0.7rem;">⚡ 天赋系统 | 技能树 | 副业 | 旅行 | 挑战</div>
+        </div>
+        <div class="age-badge" id="yearAgeDisplay">🎂 18岁 · 2024年</div>
+    </div>
+
+    <!-- 状态总览 -->
+    <div class="card">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="extra-stats" id="extraStats"></div>
+        <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap:wrap;">
+            <span id="careerSpan" class="micro-badge">💼 待业</span>
+            <span id="relationshipSpan" class="micro-badge">💔 单身</span>
+            <span id="petSpan" class="micro-badge">🐾 无宠物</span>
+            <span id="houseSpan" class="micro-badge">🏚️ 无房产</span>
+            <span id="talentSpan" class="micro-badge">🎁 无天赋</span>
+            <span id="stressSpan" class="micro-badge">😌 压力: 低</span>
+        </div>
+    </div>
+
+    <!-- 新系统面板 -->
+    <div class="card">
+        <div class="panel-tabs">
+            <button class="tab-btn active" data-tab="actions">🎯 年度行动</button>
+            <button class="tab-btn" data-tab="skills">🧬 技能树</button>
+            <button class="tab-btn" data-tab="sidejobs">💻 副业</button>
+            <button class="tab-btn" data-tab="travel">✈️ 旅行</button>
+            <button class="tab-btn" data-tab="challenges">🏅 挑战</button>
+            <button class="tab-btn" data-tab="hall">🏆 名人堂</button>
+        </div>
+        <div class="panel-content active" id="tab-actions">
+            <div class="actions-grid" id="actionsGrid"></div>
+        </div>
+        <div class="panel-content" id="tab-skills">
+            <div id="skillsPanel"></div>
+        </div>
+        <div class="panel-content" id="tab-sidejobs">
+            <div id="sideJobsPanel"></div>
+        </div>
+        <div class="panel-content" id="tab-travel">
+            <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:6px;">旅行可大幅提升某项属性，每次花费3-10万元</div>
+            <div class="travel-grid" id="travelPanel"></div>
+        </div>
+        <div class="panel-content" id="tab-challenges">
+            <div id="challengesPanel"></div>
+        </div>
+        <div class="panel-content" id="tab-hall">
+            <div id="hallPanel"></div>
+        </div>
+    </div>
+
+    <!-- 人生日志 -->
+    <div class="card">
+        <div style="font-weight:bold;margin-bottom:6px;">📜 命运手札</div>
+        <div class="log-area" id="logArea"></div>
+    </div>
+
+    <button class="btn-reset" id="resetGameBtn">🔄 重启人生 · 新的轮回</button>
+</div>
+<div id="talentModal"></div>
+<div id="endingModal"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  地球Online · 人生重开模拟器 | 命运觉醒版
+//  完整增强版 - 含天赋系统/技能树/副业/旅行/医疗/挑战/名人堂
+// ═══════════════════════════════════════════════════════════════
+(function() {
+    'use strict';
+
+    // ═══════════════════ 星空背景 ═══════════════════
+    const canvas = document.getElementById('starCanvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    for(let i = 0; i < 250; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            r: Math.random() * 2 + 0.3,
+            alpha: Math.random() * 0.6 + 0.3,
+            speed: 0.005 + Math.random() * 0.02
+        });
+    }
+    let shootingStars = [];
+    function drawStars(t) {
+        if(!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        stars.forEach(s => {
+            let a = s.alpha + Math.sin(t * s.speed + s.x) * 0.2;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(210,230,255,${Math.min(0.9, Math.max(0.2, a))})`;
+            ctx.fill();
+        });
+        // 流星效果
+        if(Math.random() < 0.005) {
+            shootingStars.push({ x: Math.random() * canvas.width, y: 0, speed: 3 + Math.random() * 3, life: 1 });
+        }
+        shootingStars = shootingStars.filter(ss => ss.life > 0);
+        shootingStars.forEach(ss => {
+            ss.x -= ss.speed;
+            ss.y += ss.speed;
+            ss.life -= 0.02;
+            ctx.beginPath();
+            ctx.moveTo(ss.x, ss.y);
+            ctx.lineTo(ss.x + ss.speed * 3, ss.y - ss.speed * 3);
+            ctx.strokeStyle = `rgba(255,255,255,${ss.life * 0.6})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        });
+        requestAnimationFrame(drawStars);
+    }
+    requestAnimationFrame(drawStars);
+
+    // ═══════════════════ 工具函数 ═══════════════════
+    function clamp(val, min, max) { return Math.min(max, Math.max(min, val)); }
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+    function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+    function chance(p) { return Math.random() < p; }
+
+    // ═══════════════════ 天赋数据库 ═══════════════════
+    const TALENTS = [
+        { id: 'genius', name: '天纵奇才', icon: '🧠', desc: '智力成长+50%，学习效果翻倍', effect: { intelGain: 1.5, studyBonus: 5 } },
+        { id: 'lucky', name: '锦鲤附体', icon: '🍀', desc: '幸运+30，投资/创业成功率+15%', effect: { luckBonus: 30, investBonus: 0.15 } },
+        { id: 'charm', name: '万人迷', icon: '💋', desc: '魅力+25，社交收益+40%，恋爱成功率+20%', effect: { charmBonus: 25, socialGain: 1.4, dateBonus: 0.2 } },
+        { id: 'athlete', name: '运动健将', icon: '🏆', desc: '健康衰减-40%，锻炼效果+60%', effect: { healthDecayMul: 0.6, exerciseBonus: 1.6 } },
+        { id: 'business', name: '商业嗅觉', icon: '💎', desc: '工作收入+30%，创业成功率+20%', effect: { incomeMul: 1.3, ventureBonus: 0.2 } },
+        { id: 'resilient', name: '百折不挠', icon: '🛡️', desc: '压力增长-50%，失败后恢复更快', effect: { stressGainMul: 0.5, recoverBonus: 1.5 } }
+    ];
+
+    // ═══════════════════ 技能树数据库 ═══════════════════
+    const SKILLS = [
+        { id: 's1', name: '高效学习', icon: '📖', cost: 30, unlock: () => gs.intelligence >= 35, desc: '学习智力+2', effect: () => { gs.skillEffects.studyBonus += 2; } },
+        { id: 's2', name: '领导力', icon: '👑', cost: 45, unlock: () => gs.social >= 40 && gs.careerTier >= 3, desc: '工作收入+20%', effect: () => { gs.skillEffects.incomeMul += 0.2; } },
+        { id: 's3', name: '投资大师', icon: '📊', cost: 50, unlock: () => gs.intelligence >= 50 && gs.wealth > 10, desc: '投资收益波动降低', effect: () => { gs.skillEffects.investStable = true; } },
+        { id: 's4', name: '健身达人', icon: '💪', cost: 35, unlock: () => gs.health >= 60, desc: '锻炼健康+3', effect: () => { gs.skillEffects.exerciseBonus += 3; } },
+        { id: 's5', name: '社交达人', icon: '🤝', cost: 40, unlock: () => gs.social >= 45, desc: '社交收益+30%', effect: () => { gs.skillEffects.socialMul += 0.3; } },
+        { id: 's6', name: '创业导师', icon: '🚀', cost: 60, unlock: () => gs.intelligence >= 60 && gs.careerTier >= 4, desc: '创业成功率+25%', effect: () => { gs.skillEffects.ventureBonus += 0.25; } },
+        { id: 's7', name: '养生专家', icon: '🍵', cost: 30, unlock: () => gs.age >= 30, desc: '健康衰减-1', effect: () => { gs.skillEffects.healthDecayRed += 1; } },
+        { id: 's8', name: '浪漫大师', icon: '🌹', cost: 25, unlock: () => gs.charm >= 50, desc: '恋爱/婚姻收益+50%', effect: () => { gs.skillEffects.loveMul += 0.5; } },
+        { id: 's9', name: '副业精通', icon: '💻', cost: 40, unlock: () => gs.intelligence >= 40, desc: '副业收入+40%', effect: () => { gs.skillEffects.sideIncomeMul += 0.4; } },
+        { id: 's10', name: '旅行家', icon: '✈️', cost: 35, unlock: () => gs.wealth > 15, desc: '旅行花费-30% 收益+20%', effect: () => { gs.skillEffects.travelCostMul -= 0.3; gs.skillEffects.travelGainMul += 0.2; } }
+    ];
+
+    // ═══════════════════ 副业数据库 ═══════════════════
+    const SIDE_JOBS = [
+        { id: 'sj1', name: '自媒体博主', icon: '📱', income: 3, stress: 2, unlock: () => gs.charm >= 40 },
+        { id: 'sj2', name: '网约车司机', icon: '🚗', income: 2.5, stress: 3, unlock: () => gs.age >= 22 },
+        { id: 'sj3', name: '网课讲师', icon: '🎓', income: 4, stress: 2, unlock: () => gs.intelligence >= 50 },
+        { id: 'sj4', name: '自由设计师', icon: '🎨', income: 3.5, stress: 2, unlock: () => gs.intelligence >= 45 },
+        { id: 'sj5', name: '投资顾问', icon: '💹', income: 5, stress: 4, unlock: () => gs.intelligence >= 60 && gs.wealth > 20 },
+        { id: 'sj6', name: '健身教练', icon: '🏋️', income: 3, stress: 1, unlock: () => gs.health >= 70 },
+        { id: 'sj7', name: '美食博主', icon: '🍜', income: 3.5, stress: 2, unlock: () => gs.happiness >= 60 },
+        { id: 'sj8', name: '程序员外包', icon: '💻', income: 6, stress: 5, unlock: () => gs.intelligence >= 65 }
+    ];
+
+    // ═══════════════════ 旅行目的地 ═══════════════════
+    const DESTINATIONS = [
+        { id: 't1', name: '丽江古城', icon: '🏔️', cost: 3, effect: () => { gs.happiness = clamp(gs.happiness + 12, 0, 100); gs.charm = clamp(gs.charm + 3, 0, 100); return '🏔️ 丽江古城的浪漫时光，快乐+12 魅力+3'; } },
+        { id: 't2', name: '三亚海滩', icon: '🏖️', cost: 4, effect: () => { gs.health = clamp(gs.health + 8, 0, 100); gs.happiness = clamp(gs.happiness + 8, 0, 100); return '🏖️ 三亚的阳光治愈身心，健康+8 快乐+8'; } },
+        { id: 't3', name: '东京都市', icon: '🗼', cost: 6, effect: () => { gs.intelligence = clamp(gs.intelligence + 5, 0, 100); gs.wealth = Math.max(0, gs.wealth - 6); return '🗼 东京的科技启发灵感，智力+5'; } },
+        { id: 't4', name: '巴黎艺术', icon: '🗽', cost: 8, effect: () => { gs.charm = clamp(gs.charm + 8, 0, 100); gs.happiness = clamp(gs.happiness + 10, 0, 100); gs.luck = clamp(gs.luck + 3, 0, 100); return '🎨 巴黎的艺术气息熏陶，魅力+8 快乐+10 幸运+3'; } },
+        { id: 't5', name: '瑞士雪山', icon: '⛷️', cost: 10, effect: () => { gs.health = clamp(gs.health + 15, 0, 100); gs.happiness = clamp(gs.happiness + 15, 0, 100); gs.stress = Math.max(0, gs.stress - 20); return '⛷️ 瑞士的纯净空气洗涤灵魂，健康+15 快乐+15 压力-20'; } },
+        { id: 't6', name: '纽约金融', icon: '🏙️', cost: 8, effect: () => { gs.intelligence = clamp(gs.intelligence + 3, 0, 100); gs.wealth += rand(2, 8) * (1 + gs.luck / 100); return '🏙️ 纽约金融圈的洞察带来商机，智力+3 财富增长'; } },
+        { id: 't7', name: '西藏朝圣', icon: '🙏', cost: 4, effect: () => { gs.luck = clamp(gs.luck + 10, 0, 100); gs.happiness = clamp(gs.happiness + 6, 0, 100); gs.stress = Math.max(0, gs.stress - 15); return '🙏 西藏的神圣洗涤心灵，幸运+10 快乐+6 压力-15'; } },
+        { id: 't8', name: '夏威夷度假', icon: '🌺', cost: 12, effect: () => { gs.happiness = clamp(gs.happiness + 20, 0, 100); gs.health = clamp(gs.health + 5, 0, 100); gs.charm = clamp(gs.charm + 5, 0, 100); return '🌺 夏威夷的梦幻假期！快乐+20 健康+5 魅力+5'; } }
+    ];
+
+    // ═══════════════════ 挑战数据库 ═══════════════════
+    const CHALLENGES = [
+        { id: 'c1', name: '年少有成', desc: '30岁前财富达到100万', check: () => gs.age <= 30 && gs.wealth >= 100 },
+        { id: 'c2', name: '学术巅峰', desc: '智力达到95', check: () => gs.intelligence >= 95 },
+        { id: 'c3', name: '健康长寿', desc: '健康保持80以上到60岁', check: () => gs.age >= 60 && gs.health >= 80 },
+        { id: 'c4', name: '幸福美满', desc: '已婚+有子+快乐>80', check: () => gs.relationship === '已婚' && gs.hasChildren && gs.happiness > 80 },
+        { id: 'c5', name: '亿万富翁', desc: '财富达到500万', check: () => gs.wealth >= 500 },
+        { id: 'c6', name: '社交达人', desc: '社交达到95', check: () => gs.social >= 95 },
+        { id: 'c7', name: '豪宅之主', desc: '拥有豪华别墅', check: () => gs.houseLevel >= 2 },
+        { id: 'c8', name: '技能大师', desc: '解锁5个技能', check: () => gs.unlockedSkills.length >= 5 },
+        { id: 'c9', name: '环球旅行家', desc: '旅行5次以上', check: () => gs.travelCount >= 5 },
+        { id: 'c10', name: '副业之王', desc: '副业收入累计50万', check: () => gs.sideIncomeTotal >= 50 },
+        { id: 'c11', name: '百毒不侵', desc: '从未生过病', check: () => gs.age >= 50 && gs.diseaseCount === 0 },
+        { id: 'c12', name: '真爱永恒', desc: '婚姻持续30年以上', check: () => gs.relationship === '已婚' && gs.relationshipYears >= 30 }
+    ];
+
+    // ═══════════════════ 全局状态 ═══════════════════
+    let gs = {};
+    let hallOfFame = JSON.parse(localStorage.getItem('lifeSimHall') || '[]');
+
+    function createGameState() {
+        return {
+            age: 18, year: 2024, gameOver: false, endingType: null,
+            health: 80, happiness: 75, intelligence: 32, wealth: 2.2, social: 46,
+            charm: 50, luck: 52, stress: 10,
+            houseLevel: 0, hasPet: false, petName: '',
+            relationship: '单身', relationshipYears: 0, hasChildren: false,
+            career: '待业', careerTier: 1,
+            achievements: [], unlockedSkills: [], activeSideJobs: [],
+            travelCount: 0, sideIncomeTotal: 0, diseaseCount: 0,
+            consecutiveBadMonths: 0, lastAction: '',
+            stockHoldings: 0, marketIndex: 100, lotteryCooldown: 0,
+            turnsSinceSocial: 0,
+            talent: null, chosenTalent: null,
+            skillEffects: {
+                studyBonus: 0, incomeMul: 1, investStable: false,
+                exerciseBonus: 0, socialMul: 1, ventureBonus: 0,
+                healthDecayRed: 0, loveMul: 0, sideIncomeMul: 1,
+                travelCostMul: 1, travelGainMul: 1
+            },
+            challengesCompleted: [],
+            eventChain: null, eventChainStep: 0,
+            // 名人堂记录
+            thisRun: { maxWealth: 2.2, maxHealth: 80, maxIntel: 32, maxSocial: 46, maxHappiness: 75, events: 0, skills: 0, travels: 0 }
+        };
+    }
+
+    // ═══════════════════ 天赋选择 ═══════════════════
+    function showTalentSelect() {
+        const modal = document.getElementById('talentModal');
+        const pool = TALENTS.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+        modal.innerHTML = `
+            <div class="talent-overlay">
+                <div class="talent-card">
+                    <h2 style="margin-bottom:6px;">🎁 命运赠礼 · 选择天赋</h2>
+                    <p style="font-size:0.75rem;color:#94a3b8;margin-bottom:12px;">每个人生来独特，选择一项天赋开启你的人生</p>
+                    <div id="talentOptions">
+                        ${pool.map((t, i) => `
+                            <div class="talent-option" data-index="${i}" data-id="${t.id}">
+                                <div style="font-size:1.5rem;margin-bottom:4px;">${t.icon}</div>
+                                <div style="font-weight:bold;">${t.name}</div>
+                                <div style="font-size:0.7rem;color:#94a3b8;">${t.desc}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button id="confirmTalent" style="margin-top:14px;background:#4da6ff;border:none;padding:10px 32px;border-radius:40px;color:white;font-weight:bold;cursor:pointer;width:100%;font-family:inherit;" disabled>确认选择</button>
+                </div>
+            </div>
+        `;
+        let selected = null;
+        modal.querySelectorAll('.talent-option').forEach(el => {
+            el.addEventListener('click', () => {
+                modal.querySelectorAll('.talent-option').forEach(e => e.classList.remove('selected'));
+                el.classList.add('selected');
+                selected = pool[parseInt(el.dataset.index)];
+                document.getElementById('confirmTalent').disabled = false;
+            });
+        });
+        document.getElementById('confirmTalent').addEventListener('click', () => {
+            if(!selected) return;
+            gs.chosenTalent = selected;
+            gs.talent = selected;
+            applyTalentEffect(selected);
+            modal.innerHTML = '';
+            addLog(`✨ 天赋觉醒：${selected.icon} ${selected.name}！${selected.desc}`, 'special');
+            showToast(`🎁 ${selected.name} 已激活`);
+            renderUI();
+        });
+    }
+
+    function applyTalentEffect(talent) {
+        const e = talent.effect;
+        if(e.luckBonus) gs.luck = clamp(gs.luck + e.luckBonus, 0, 100);
+        if(e.charmBonus) gs.charm = clamp(gs.charm + e.charmBonus, 0, 100);
+    }
+
+    function getTalentMultiplier(type) {
+        if(!gs.talent) return 1;
+        const e = gs.talent.effect;
+        switch(type) {
+            case 'intelGain': return e.intelGain || 1;
+            case 'studyBonus': return e.studyBonus || 0;
+            case 'investBonus': return e.investBonus || 0;
+            case 'incomeMul': return e.incomeMul || 1;
+            case 'ventureBonus': return e.ventureBonus || 0;
+            case 'socialGain': return e.socialGain || 1;
+            case 'dateBonus': return e.dateBonus || 0;
+            case 'exerciseBonus': return e.exerciseBonus || 1;
+            case 'healthDecayMul': return e.healthDecayMul || 1;
+            case 'stressGainMul': return e.stressGainMul || 1;
+            case 'recoverBonus': return e.recoverBonus || 1;
+            default: return 1;
+        }
+    }
+
+    // ═══════════════════ 职业系统 ═══════════════════
+    function updateCareerDynamic() {
+        const intel = gs.intelligence;
+        const wealth = gs.wealth;
+        const social = gs.social;
+        let newCareer = '待业';
+        let tier = 1;
+        if(intel >= 90 && wealth > 50 && social > 60) { newCareer = '🏛️ 商业教父'; tier = 7; }
+        else if(intel >= 80 && wealth > 30) { newCareer = '🌈 行业巨头'; tier = 6; }
+        else if(intel >= 70) { newCareer = '🌟 精英领袖'; tier = 5; }
+        else if(intel >= 55) { newCareer = '📈 高级专家'; tier = 4; }
+        else if(intel >= 38) { newCareer = '💼 资深职员'; tier = 3; }
+        else if(intel >= 22) { newCareer = '📋 普通员工'; tier = 2; }
+        else { newCareer = '🔧 基础劳工'; tier = 1; }
+        if(newCareer !== gs.career && gs.career !== '待业') {
+            addLog(`✨ 职业生涯突破！晋升为 ${newCareer}，世人瞩目！`, 'special');
+            gs.happiness = clamp(gs.happiness + 8, 0, 100);
+        }
+        gs.career = newCareer;
+        gs.careerTier = tier;
+    }
+
+    function getYearlyIncome() {
+        let base = 2.5 + gs.careerTier * 2.2;
+        let bonus = (gs.intelligence / 100) * 5 + (gs.luck / 100) * 2;
+        let income = Math.max(0.5, base + bonus + rand(-1, 3));
+        // 技能加成
+        income *= gs.skillEffects.incomeMul;
+        // 天赋加成
+        income *= getTalentMultiplier('incomeMul');
+        // 压力惩罚
+        if(gs.stress > 60) income *= 0.85;
+        if(gs.stress > 80) income *= 0.7;
+        return income;
+    }
+
+    // ═══════════════════ 日志系统 ═══════════════════
+    function addLog(msg, type = 'neutral') {
+        const logDiv = document.getElementById('logArea');
+        const entry = document.createElement('div');
+        entry.className = 'log-line';
+        if(type === 'positive') entry.style.borderLeftColor = '#4ecb71';
+        else if(type === 'negative') entry.style.borderLeftColor = '#ef4444';
+        else if(type === 'special') entry.style.borderLeftColor = '#f0c060';
+        entry.innerHTML = `📆 [${gs.year}年] ${msg}`;
+        logDiv.prepend(entry);
+        if(logDiv.children.length > 50) logDiv.removeChild(logDiv.lastChild);
+        gs.thisRun.events++;
+    }
+
+    function showToast(msg, dur = 2000) {
+        let toastDiv = document.createElement('div');
+        toastDiv.innerText = msg;
+        toastDiv.style.position = 'fixed';
+        toastDiv.style.bottom = '20px';
+        toastDiv.style.left = '50%';
+        toastDiv.style.transform = 'translateX(-50%)';
+        toastDiv.style.backgroundColor = '#1f2a3e';
+        toastDiv.style.padding = '8px 18px';
+        toastDiv.style.borderRadius = '40px';
+        toastDiv.style.border = '1px solid #f0c060';
+        toastDiv.style.zIndex = '999';
+        toastDiv.style.fontSize = '0.8rem';
+        toastDiv.style.fontWeight = 'bold';
+        document.body.appendChild(toastDiv);
+        setTimeout(() => { toastDiv.remove(); }, dur);
+    }
+
+    // ═══════════════════ 医疗事件系统 ═══════════════════
+    function triggerMedicalEvent() {
+        if(gs.gameOver) return;
+        const age = gs.age;
+        const healthRisk = (100 - gs.health) / 100;
+        const ageRisk = age > 40 ? (age - 40) * 0.008 : 0;
+        const stressRisk = gs.stress / 200;
+
+        if(chance(0.03 + healthRisk * 0.1 + ageRisk + stressRisk)) {
+            const diseases = [
+                { name: '感冒', healthLoss: 3, cost: 0.5, ageMin: 0 },
+                { name: '肠胃炎', healthLoss: 5, cost: 1.2, ageMin: 0 },
+                { name: '腰椎劳损', healthLoss: 6, cost: 2, ageMin: 25 },
+                { name: '高血压', healthLoss: 8, cost: 3, ageMin: 35 },
+                { name: '心脏病', healthLoss: 15, cost: 8, ageMin: 40 },
+                { name: '抑郁症', healthLoss: 5, cost: 5, ageMin: 20 },
+                { name: '糖尿病', healthLoss: 10, cost: 4, ageMin: 35 },
+                { name: '癌症', healthLoss: 30, cost: 20, ageMin: 45 }
+            ];
+            const possible = diseases.filter(d => age >= d.ageMin);
+            const disease = possible[randInt(0, possible.length - 1)];
+            gs.diseaseCount++;
+            gs.health = clamp(gs.health - disease.healthLoss, 0, 100);
+            gs.wealth = Math.max(-30, gs.wealth - disease.cost);
+            gs.stress = clamp(gs.stress + 10, 0, 100);
+            addLog(`🏥 被诊断为${disease.name}！健康-${disease.healthLoss} 花费${disease.cost}万`, 'negative');
+            showToast(`🏥 ${disease.name}！注意健康`);
+
+            // 严重疾病可能触发事件链
+            if(disease.healthLoss >= 15) {
+                gs.eventChain = 'serious_illness';
+                gs.eventChainStep = 1;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // ═══════════════════ 事件链系统 ═══════════════════
+    function processEventChain() {
+        if(!gs.eventChain) return false;
+        gs.eventChainStep++;
+        switch(gs.eventChain) {
+            case 'serious_illness':
+                if(gs.eventChainStep === 2) {
+                    addLog('💊 康复期中...医生建议多休息，健康缓慢恢复', 'positive');
+                    gs.health = clamp(gs.health + 5, 0, 100);
+                } else if(gs.eventChainStep >= 3) {
+                    if(gs.health > 40) {
+                        addLog('🌈 战胜病魔！你更加珍惜生命，快乐+10 幸运+5', 'positive');
+                        gs.happiness = clamp(gs.happiness + 10, 0, 100);
+                        gs.luck = clamp(gs.luck + 5, 0, 100);
+                    } else {
+                        addLog('⚠️ 病情反复，需要持续治疗...', 'negative');
+                        gs.health = clamp(gs.health - 5, 0, 100);
+                    }
+                    gs.eventChain = null;
+                    gs.eventChainStep = 0;
+                }
+                return true;
+            case 'startup_success':
+                if(gs.eventChainStep === 2) {
+                    addLog('📰 你的公司上了新闻头条！知名度大增，社交+10', 'special');
+                    gs.social = clamp(gs.social + 10, 0, 100);
+                } else if(gs.eventChainStep === 3) {
+                    addLog('💼 投资人找上门来，提供丰厚融资，财富+15', 'positive');
+                    gs.wealth += 15;
+                    gs.eventChain = null;
+                    gs.eventChainStep = 0;
+                }
+                return true;
+            case 'lottery_win':
+                if(gs.eventChainStep === 2) {
+                    addLog('👨‍👩‍👧 亲戚朋友纷纷来祝贺，有人借钱有人攀关系...', 'neutral');
+                    gs.social = clamp(gs.social + 5, 0, 100);
+                    gs.eventChain = null;
+                    gs.eventChainStep = 0;
+                }
+                return true;
+        }
+        return false;
+    }
+
+    // ═══════════════════ 随机事件库 (50+种) ═══════════════════
+    function triggerRichEvent() {
+        if(gs.gameOver) return;
+        if(processEventChain()) return;
+
+        const r = Math.random();
+        // 婚恋事件 (20-35岁)
+        if(gs.age >= 20 && gs.age <= 35 && gs.relationship === '单身' && gs.social > 30 && gs.charm > 35 && r < 0.4) {
+            gs.relationship = '恋爱中';
+            gs.relationshipYears = 0;
+            const bonus = Math.floor(12 * (1 + gs.skillEffects.loveMul));
+            gs.happiness = clamp(gs.happiness + bonus, 0, 100);
+            addLog('💘 浪漫邂逅！在一次聚会中你遇到了灵魂伴侣，甜蜜恋爱开始！', 'special');
+            showToast('❤️ 坠入爱河！');
+            return;
+        }
+        if(gs.relationship === '恋爱中' && gs.relationshipYears >= 1 && gs.age <= 35 && r < 0.5) {
+            gs.relationship = '已婚';
+            const bonus = Math.floor(18 * (1 + gs.skillEffects.loveMul));
+            gs.happiness = clamp(gs.happiness + bonus, 0, 100);
+            gs.social = clamp(gs.social + 8, 0, 100);
+            addLog('💍 浪漫求婚！你们携手步入婚姻殿堂，人生新篇章！', 'special');
+            showToast('🎉 新婚快乐！');
+            return;
+        }
+        // 生子事件 (22-40岁)
+        if(gs.relationship === '已婚' && !gs.hasChildren && gs.age >= 22 && gs.age <= 40 && r < 0.45) {
+            gs.hasChildren = true;
+            gs.happiness = clamp(gs.happiness + 15, 0, 100);
+            addLog('👶 家中迎来新生命！成为父母，责任与幸福交织。', 'positive');
+            showToast('👼 喜得贵子/女！');
+            return;
+        }
+        // 子女成长事件
+        if(gs.hasChildren && gs.age >= 28 && gs.age <= 50 && r < 0.15) {
+            const events = [
+                { msg: '🎒 孩子上学了！你开始重视教育投资，智力+2', intel: 2, cost: 1 },
+                { msg: '🏆 孩子在比赛中获奖！你感到无比骄傲，快乐+10', happy: 10 },
+                { msg: '📚 孩子成绩优异，你的教育投入得到回报，快乐+8 社交+3', happy: 8, soc: 3 },
+                { msg: '🎨 孩子展现出艺术天赋，全家充满欢笑，快乐+6', happy: 6 }
+            ];
+            const ev = events[randInt(0, events.length - 1)];
+            if(ev.intel) gs.intelligence = clamp(gs.intelligence + ev.intel, 0, 100);
+            if(ev.happy) gs.happiness = clamp(gs.happiness + ev.happy, 0, 100);
+            if(ev.soc) gs.social = clamp(gs.social + ev.soc, 0, 100);
+            if(ev.cost) gs.wealth = Math.max(-30, gs.wealth - ev.cost);
+            addLog(ev.msg, 'positive');
+            return;
+        }
+        // 股市波动
+        if(r < 0.12 && gs.wealth > 2) {
+            const luckFactor = gs.luck / 50;
+            const fluctuation = (Math.random() - 0.4) * luckFactor * 10;
+            const change = Math.floor(fluctuation * 10) / 10;
+            gs.wealth = Math.max(-30, gs.wealth + change);
+            if(change > 0) addLog(`📈 股市行情大好，资产增值 ${change.toFixed(1)} 万元！`, 'positive');
+            else addLog(`📉 股市震荡，亏损 ${Math.abs(change).toFixed(1)} 万元。`, 'negative');
+        }
+        // 宠物缘分
+        if(!gs.hasPet && gs.age > 20 && r < 0.1 && gs.happiness > 35) {
+            const pets = ['🐱 橘猫', '🐕 金毛犬', '🐰 垂耳兔', '🦜 鹦鹉'];
+            gs.hasPet = true;
+            gs.petName = pets[randInt(0, pets.length - 1)];
+            gs.happiness = clamp(gs.happiness + 12, 0, 100);
+            gs.stress = Math.max(0, gs.stress - 5);
+            addLog(`${gs.petName} 闯入了你的生活！温暖陪伴，快乐+12 压力-5`, 'positive');
+            showToast(`🐾 ${gs.petName} 成为家人！`);
+        }
+        // 宠物离世 (老年)
+        if(gs.hasPet && gs.age > 50 && r < 0.04) {
+            gs.hasPet = false;
+            gs.happiness = clamp(gs.happiness - 15, 0, 100);
+            gs.stress = clamp(gs.stress + 10, 0, 100);
+            addLog(`🌈 ${gs.petName} 回了彩虹桥...永远怀念这个陪伴多年的家人。`, 'negative');
+            gs.petName = '';
+        }
+        // 购房机遇
+        if(gs.houseLevel === 0 && gs.wealth > 20 && r < 0.12) {
+            gs.houseLevel = 1;
+            gs.wealth -= 12;
+            addLog('🏠 以优惠价格购入了人生第一套公寓！归属感提升。', 'positive');
+            showToast('🏠 喜提新房！');
+        }
+        // 房屋贬值/升值
+        if(gs.houseLevel >= 1 && r < 0.08) {
+            const change = rand(-3, 5);
+            gs.wealth += change;
+            if(change > 0) addLog(`📈 房产升值，资产增加 ${change.toFixed(1)} 万元！`, 'positive');
+            else addLog(`📉 房市低迷，房产贬值 ${Math.abs(change).toFixed(1)} 万元。`, 'negative');
+        }
+        // 婚姻危机
+        if(gs.relationship === '已婚' && gs.relationshipYears > 5 && r < 0.06 && gs.happiness < 40) {
+            if(chance(0.5)) {
+                gs.relationship = '单身';
+                gs.relationshipYears = 0;
+                gs.happiness = clamp(gs.happiness - 20, 0, 100);
+                gs.stress = clamp(gs.stress + 25, 0, 100);
+                addLog('💔 婚姻走到了尽头...离婚带来巨大打击。', 'negative');
+                showToast('💔 离婚了...');
+            } else {
+                addLog('⚡ 婚姻出现危机，但通过沟通化解了矛盾，关系更坚固。', 'positive');
+                gs.happiness = clamp(gs.happiness + 5, 0, 100);
+            }
+        }
+        // 朋友事件
+        if(gs.social > 30 && r < 0.08) {
+            const events = [
+                { msg: '🤝 老友重逢，畅聊往昔，快乐+8 社交+3', happy: 8, soc: 3 },
+                { msg: '🎁 朋友送你一份惊喜礼物，快乐+5', happy: 5 },
+                { msg: '👥 通过朋友认识了一位贵人，社交+5 幸运+3', soc: 5, luck: 3 }
+            ];
+            const ev = events[randInt(0, events.length - 1)];
+            if(ev.happy) gs.happiness = clamp(gs.happiness + ev.happy, 0, 100);
+            if(ev.soc) gs.social = clamp(gs.social + ev.soc, 0, 100);
+            if(ev.luck) gs.luck = clamp(gs.luck + ev.luck, 0, 100);
+            addLog(ev.msg, 'positive');
+        }
+        // 意外之财
+        if(r < 0.04 && gs.luck > 40) {
+            const amount = rand(1, 8);
+            gs.wealth += amount;
+            addLog(`💰 意外之财！捡到/继承了 ${amount.toFixed(1)} 万元！`, 'positive');
+            showToast('💰 天降横财！');
+        }
+        // 工作压力事件
+        if(gs.lastAction === 'work' && r < 0.1) {
+            gs.stress = clamp(gs.stress + randInt(5, 15), 0, 100);
+            addLog('😰 工作压力大增，加班到深夜...压力上升', 'negative');
+        }
+        // 裁员事件 (经济不好时)
+        if(gs.careerTier >= 3 && gs.age > 30 && r < 0.04) {
+            const oldCareer = gs.career;
+            gs.career = '待业';
+            gs.careerTier = 1;
+            gs.stress = clamp(gs.stress + 20, 0, 100);
+            gs.happiness = clamp(gs.happiness - 15, 0, 100);
+            addLog(`📉 经济危机！公司裁员，你从 ${oldCareer} 失业了...`, 'negative');
+            showToast('📉 失业了！');
+        }
+        // 中年后危机
+        if(gs.age === 35 && r < 0.3) {
+            gs.stress = clamp(gs.stress + 15, 0, 100);
+            addLog('🤔 35岁危机感袭来...你开始思考人生的意义。', 'neutral');
+        }
+        if(gs.age === 45 && r < 0.25) {
+            gs.happiness = clamp(gs.happiness - 8, 0, 100);
+            gs.stress = clamp(gs.stress + 10, 0, 100);
+            addLog('😔 中年危机：上有老下有小，压力倍增...', 'negative');
+        }
+        // 退休准备
+        if(gs.age >= 55 && gs.age < 65 && r < 0.1) {
+            addLog('🌅 退休生活在望，你开始规划晚年...', 'positive');
+            gs.happiness = clamp(gs.happiness + 3, 0, 100);
+        }
+        // 自然灾害 (小概率)
+        if(r < 0.015) {
+            const loss = rand(2, 8);
+            gs.wealth = Math.max(-30, gs.wealth - loss);
+            gs.happiness = clamp(gs.happiness - 8, 0, 100);
+            addLog(`🌪️ 遭遇自然灾害！损失 ${loss.toFixed(1)} 万元，心情低落。`, 'negative');
+        }
+        // 中彩票 (极小概率)
+        if(r < 0.008 && gs.luck > 30) {
+            const jackpot = rand(20, 100);
+            gs.wealth += jackpot;
+            gs.happiness = clamp(gs.happiness + 25, 0, 100);
+            addLog(`🎰 中了彩票大奖！${jackpot.toFixed(1)} 万元！一夜暴富！`, 'special');
+            showToast(`🎰 中了${jackpot.toFixed(0)}万！`);
+            gs.eventChain = 'lottery_win';
+            gs.eventChainStep = 0;
+        }
+    }
+
+    // ═══════════════════ 自然衰老 ═══════════════════
+    function applyAging() {
+        const age = gs.age;
+        // 健康衰减 (修复: 正确使用天赋系数)
+        let healthDecay = 1 + (age > 35 ? 0.8 : 0) + (age > 50 ? 1.5 : 0) + (age > 70 ? 2 : 0);
+        healthDecay *= getTalentMultiplier('healthDecayMul');
+        healthDecay -= gs.skillEffects.healthDecayRed;
+        healthDecay = Math.max(0.3, healthDecay);
+        gs.health = clamp(gs.health - healthDecay, 0, 100);
+
+        // 快乐自然衰减
+        let happyDecay = 1 + (age > 45 ? 0.8 : 0);
+        gs.happiness = clamp(gs.happiness - happyDecay, 0, 100);
+
+        // 社交衰减
+        gs.turnsSinceSocial++;
+        if(gs.turnsSinceSocial > 2) gs.social = clamp(gs.social - 2, 0, 100);
+
+        // 婚姻关系维护
+        if(gs.relationship !== '单身') gs.relationshipYears++;
+
+        // 房屋增值
+        if(gs.houseLevel === 1) gs.wealth += 0.8;
+        if(gs.houseLevel === 2) gs.wealth += 2;
+
+        // 宠物陪伴
+        if(gs.hasPet) {
+            gs.happiness = clamp(gs.happiness + 2, 0, 100);
+            gs.stress = Math.max(0, gs.stress - 2);
+        }
+
+        // 子女陪伴 (有孩子后)
+        if(gs.hasChildren) {
+            gs.happiness = clamp(gs.happiness + 1.5, 0, 100);
+        }
+
+        // 压力自然恢复 (轻微)
+        gs.stress = Math.max(0, gs.stress - 1);
+
+        // 记录最高值
+        gs.thisRun.maxWealth = Math.max(gs.thisRun.maxWealth, gs.wealth);
+        gs.thisRun.maxHealth = Math.max(gs.thisRun.maxHealth, gs.health);
+        gs.thisRun.maxIntel = Math.max(gs.thisRun.maxIntel, gs.intelligence);
+        gs.thisRun.maxSocial = Math.max(gs.thisRun.maxSocial, gs.social);
+        gs.thisRun.maxHappiness = Math.max(gs.thisRun.maxHappiness, gs.happiness);
+    }
+
+    // ═══════════════════ 财富百分比计算 ═══════════════════
+    function getWealthPercent() { return Math.min(100, Math.max(0, Math.log10(gs.wealth + 2) * 18)); }
+
+    // ═══════════════════ 压力显示 ═══════════════════
+    function getStressLabel() {
+        if(gs.stress < 20) return '😌 压力: 低';
+        if(gs.stress < 40) return '😐 压力: 中';
+        if(gs.stress < 60) return '😰 压力: 高';
+        if(gs.stress < 80) return '😵 压力: 极高';
+        return '💀 压力: 崩溃';
+    }
+
+    // ═══════════════════ 更新UI ═══════════════════
+    function renderUI() {
+        document.getElementById('yearAgeDisplay').innerHTML = `🎂 ${gs.age}岁 · ${gs.year}年`;
+        let statsHtml = `
+            <div class="stat-item"><div class="stat-header"><span>❤️ 健康</span><span>${Math.round(gs.health)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.health}%; background:${gs.health > 60 ? '#4ecb71' : gs.health > 30 ? '#fbbf24' : '#ef4444'};"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>😊 快乐</span><span>${Math.round(gs.happiness)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.happiness}%; background:${gs.happiness > 60 ? '#fbbf24' : '#ef4444'};"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>🧠 智力</span><span>${Math.round(gs.intelligence)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.intelligence}%; background:#a78bfa;"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>💰 财富(万元)</span><span>${gs.wealth.toFixed(1)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${getWealthPercent()}%; background:#f0c060;"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>🤝 社交</span><span>${Math.round(gs.social)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.social}%; background:#f472b6;"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>✨ 魅力</span><span>${Math.round(gs.charm)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.charm}%; background:#ff9f4a;"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>🍀 幸运</span><span>${Math.round(gs.luck)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.luck}%; background:#6ee7b7;"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>😰 压力</span><span>${Math.round(gs.stress)}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${gs.stress}%; background:${gs.stress > 60 ? '#ef4444' : '#60a5fa'};"></div></div></div>
+        `;
+        document.getElementById('statsGrid').innerHTML = statsHtml;
+
+        let extra = `
+            <div>🏠 房产: ${gs.houseLevel === 0 ? '无房' : (gs.houseLevel === 1 ? '温馨公寓' : '豪华别墅')}</div>
+            <div>🐕 宠物: ${gs.hasPet ? gs.petName : '无'}</div>
+            <div>💍 家庭: ${gs.hasChildren ? '已育' : '暂无子女'}</div>
+            <div>🎖️ 成就: ${gs.achievements.length}</div>
+            <div>🧬 技能: ${gs.unlockedSkills.length}</div>
+            <div>✈️ 旅行: ${gs.travelCount}次</div>
+        `;
+        document.getElementById('extraStats').innerHTML = extra;
+
+        document.getElementById('careerSpan').innerHTML = `💼 ${gs.career}`;
+        document.getElementById('relationshipSpan').innerHTML = gs.relationship === '已婚' ? `💍 已婚${gs.hasChildren ? ' 👶' : ''}` : (gs.relationship === '恋爱中' ? '💕 恋爱中' : '💔 单身');
+        document.getElementById('petSpan').innerHTML = gs.hasPet ? `🐾 ${gs.petName}` : '🐾 无宠物';
+        document.getElementById('houseSpan').innerHTML = gs.houseLevel === 0 ? '🏚️ 租房' : (gs.houseLevel === 1 ? '🏢 公寓' : '🏰 豪宅');
+        document.getElementById('talentSpan').innerHTML = gs.talent ? `${gs.talent.icon} ${gs.talent.name}` : '🎁 无天赋';
+        document.getElementById('stressSpan').innerHTML = getStressLabel();
+
+        // 更新各面板
+        renderSkillsPanel();
+        renderSideJobsPanel();
+        renderTravelPanel();
+        renderChallengesPanel();
+        renderHallPanel();
+    }
+
+    // ═══════════════════ 技能树面板 ═══════════════════
+    function renderSkillsPanel() {
+        const panel = document.getElementById('skillsPanel');
+        panel.innerHTML = SKILLS.map(skill => {
+            const unlocked = gs.unlockedSkills.includes(skill.id);
+            const canUnlock = skill.unlock();
+            return `
+                <div class="skill-item ${unlocked ? 'unlocked' : (canUnlock ? '' : 'locked')}">
+                    <div>
+                        <span style="font-size:1.2rem;">${skill.icon}</span>
+                        <span style="font-weight:bold;">${skill.name}</span>
+                        <div style="font-size:0.65rem;color:#94a3b8;">${skill.desc} (需智力${skill.cost})</div>
+                    </div>
+                    <button class="action-btn" style="padding:4px 10px;font-size:0.65rem;" data-skill="${skill.id}"
+                        ${unlocked || !canUnlock ? 'disabled' : ''}>
+                        ${unlocked ? '✅ 已解锁' : (canUnlock ? '🔓 解锁' : '🔒 未满足')}
+                    </button>
+                </div>
+            `;
+        }).join('');
+        panel.querySelectorAll('button[data-skill]').forEach(btn => {
+            btn.addEventListener('click', () => unlockSkill(btn.dataset.skill));
+        });
+    }
+
+    function unlockSkill(skillId) {
+        const skill = SKILLS.find(s => s.id === skillId);
+        if(!skill || gs.unlockedSkills.includes(skillId)) return;
+        if(gs.intelligence < skill.cost) { showToast('🧠 智力不足！'); return; }
+        if(!skill.unlock()) { showToast('❌ 未满足解锁条件！'); return; }
+        gs.intelligence -= skill.cost;
+        gs.unlockedSkills.push(skillId);
+        skill.effect();
+        addLog(`🧬 解锁技能：${skill.icon} ${skill.name}！${skill.desc}`, 'special');
+        showToast(`🧬 ${skill.name} 已解锁`);
+        renderUI();
+    }
+
+    // ═══════════════════ 副业面板 ═══════════════════
+    function renderSideJobsPanel() {
+        const panel = document.getElementById('sideJobsPanel');
+        panel.innerHTML = SIDE_JOBS.map(job => {
+            const active = gs.activeSideJobs.includes(job.id);
+            const canActivate = job.unlock();
+            return `
+                <div class="side-job-item">
+                    <div>
+                        <span style="font-size:1.2rem;">${job.icon}</span>
+                        <span style="font-weight:bold;">${job.name}</span>
+                        <div style="font-size:0.65rem;color:#94a3b8;">收入${job.income}万/年 压力+${job.stress}</div>
+                    </div>
+                    <button class="action-btn ${active || !canActivate ? 'disabled' : ''}" style="padding:4px 10px;font-size:0.65rem;" data-job="${job.id}">
+                        ${active ? '✅ 进行中' : (canActivate ? '▶️ 开始' : '🔒 未解锁')}
+                    </button>
+                </div>
+            `;
+        }).join('');
+        panel.querySelectorAll('button[data-job]').forEach(btn => {
+            btn.addEventListener('click', () => toggleSideJob(btn.dataset.job));
+        });
+    }
+
+    function toggleSideJob(jobId) {
+        if(gs.activeSideJobs.includes(jobId)) return;
+        if(gs.activeSideJobs.length >= 2) { showToast('⚠️ 最多同时做2份副业！'); return; }
+        gs.activeSideJobs.push(jobId);
+        addLog(`💻 开始副业：${SIDE_JOBS.find(j => j.id === jobId).name}`, 'positive');
+        showToast('💻 副业开始！');
+        renderUI();
+    }
+
+    function processSideJobs() {
+        gs.activeSideJobs.forEach(jobId => {
+            const job = SIDE_JOBS.find(j => j.id === jobId);
+            if(!job) return;
+            let income = job.income * gs.skillEffects.sideIncomeMul;
+            gs.wealth += income;
+            gs.stress = clamp(gs.stress + job.stress, 0, 100);
+            gs.sideIncomeTotal += income;
+        });
+    }
+
+    // ═══════════════════ 旅行面板 ═══════════════════
+    function renderTravelPanel() {
+        const panel = document.getElementById('travelPanel');
+        panel.innerHTML = DESTINATIONS.map(dest => {
+            const cost = Math.floor(dest.cost * (1 + gs.skillEffects.travelCostMul));
+            const canAfford = gs.wealth >= cost;
+            return `
+                <button class="travel-btn ${canAfford ? '' : 'disabled'}" data-dest="${dest.id}">
+                    <div style="font-size:1.5rem;">${dest.icon}</div>
+                    <div style="font-weight:bold;">${dest.name}</div>
+                    <div style="font-size:0.6rem;color:#94a3b8;">${cost}万元</div>
+                </button>
+            `;
+        }).join('');
+        panel.querySelectorAll('button[data-dest]').forEach(btn => {
+            btn.addEventListener('click', () => doTravel(btn.dataset.dest));
+        });
+    }
+
+    function doTravel(destId) {
+        if(gs.gameOver) return;
+        const dest = DESTINATIONS.find(d => d.id === destId);
+        if(!dest) return;
+        const cost = Math.floor(dest.cost * (1 + gs.skillEffects.travelCostMul));
+        if(gs.wealth < cost) { showToast('💰 资金不足！'); return; }
+
+        // 旅行消耗一年
+        applyAging();
+        gs.wealth -= cost;
+        gs.travelCount++;
+        gs.thisRun.travels++;
+        gs.turnsSinceSocial = 0;
+
+        const msg = dest.effect();
+        addLog(`✈️ ${msg}`, 'positive');
+        showToast(`✈️ 旅行归来！`);
+
+        // 旅行也触发随机事件
+        if(Math.random() < 0.4) triggerRichEvent();
+
+        gs.age++;
+        gs.year++;
+        checkAchievements();
+        renderUI();
+        if(checkEnding()) renderUI();
+    }
+
+    // ═══════════════════ 挑战面板 ═══════════════════
+    function renderChallengesPanel() {
+        const panel = document.getElementById('challengesPanel');
+        panel.innerHTML = CHALLENGES.map(c => {
+            const completed = gs.challengesCompleted.includes(c.id);
+            return `
+                <div class="challenge-item ${completed ? 'completed' : ''}">
+                    <span>${completed ? '✅' : '📌'} ${c.name}: ${c.desc}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function checkChallenges() {
+        CHALLENGES.forEach(c => {
+            if(!gs.challengesCompleted.includes(c.id) && c.check()) {
+                gs.challengesCompleted.push(c.id);
+                addLog(`🏅 挑战完成：${c.name}！${c.desc}`, 'special');
+                showToast(`🏅 ${c.name} 完成！`);
+                gs.happiness = clamp(gs.happiness + 5, 0, 100);
+            }
+        });
+    }
+
+    // ═══════════════════ 名人堂 ═══════════════════
+    function renderHallPanel() {
+        const panel = document.getElementById('hallPanel');
+        if(hallOfFame.length === 0) {
+            panel.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;text-align:center;padding:20px;">暂无记录，完成一局游戏后将在此展示</div>';
+            return;
+        }
+        panel.innerHTML = `
+            <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:8px;">🏆 历史最高记录 (共${hallOfFame.length}局)</div>
+            ${hallOfFame.slice(-8).reverse().map((record, i) => `
+                <div class="hall-row">
+                    <span>🎂 ${record.age}岁 · ${record.ending}</span>
+                    <span>💰${record.wealth.toFixed(0)}万 🧠${record.intel} 😊${record.happy}</span>
+                </div>
+            `).join('')}
+        `;
+    }
+
+    function saveToHall() {
+        const record = {
+            age: gs.age,
+            year: gs.year,
+            wealth: gs.wealth,
+            maxWealth: gs.thisRun.maxWealth,
+            intel: Math.round(gs.intelligence),
+            happy: Math.round(gs.happiness),
+            health: Math.round(gs.health),
+            social: Math.round(gs.social),
+            achievements: gs.achievements.length,
+            skills: gs.unlockedSkills.length,
+            travels: gs.travelCount,
+            ending: gs.endingType || '未知',
+            talent: gs.talent ? gs.talent.name : '无',
+            date: new Date().toLocaleDateString()
+        };
+        hallOfFame.push(record);
+        if(hallOfFame.length > 20) hallOfFame.shift();
+        localStorage.setItem('lifeSimHall', JSON.stringify(hallOfFame));
+    }
+
+    // ═══════════════════ 结局判定 ═══════════════════
+    function checkEnding() {
+        if(gs.gameOver) return true;
+        if(gs.health <= 0) { showEnding('💀 英年早逝', '健康归零，生命终止。未能走完完整人生。', 'grave'); return true; }
+        if(gs.happiness <= 0) { showEnding('😢 绝望深渊', '长期的痛苦吞噬了内心，人生黯淡收场。', 'bad'); return true; }
+        if(gs.wealth <= -30) { showEnding('📉 破产深渊', '债务压垮了一切，人生潦倒终结。', 'bad'); return true; }
+        if(gs.stress >= 100) { showEnding('💔 心力交瘁', '巨大的压力最终压垮了你...', 'bad'); return true; }
+
+        // 65岁正常退休结局
+        if(gs.age >= 65) {
+            let endingText = '';
+            let title = '';
+            const w = gs.wealth;
+            if(w >= 500) { title = '🏦 财富传奇'; endingText = '富可敌国，家族兴盛，传奇人生！'; }
+            else if(gs.intelligence >= 85 && gs.happiness > 70) { title = '🎓 学术巨匠'; endingText = '桃李满天下，智慧永流传。'; }
+            else if(gs.hasChildren && gs.relationship === '已婚') { title = '👨‍👩‍👧 天伦之乐'; endingText = '家庭美满，晚年幸福安康。'; }
+            else if(gs.houseLevel >= 1 && w > 50) { title = '🏡 安稳晚年'; endingText = '退休生活富足惬意。'; }
+            else if(gs.unlockedSkills.length >= 5) { title = '🧬 技能大师'; endingText = '博学多才，技艺傍身，受人尊敬。'; }
+            else if(gs.travelCount >= 5) { title = '✈️ 环球旅行家'; endingText = '看过世界的风景，此生无憾。'; }
+            else { title = '🌾 平凡一生'; endingText = '虽有遗憾，但仍是独一无二的旅程。'; }
+            showEnding(title, endingText, 'retire');
+            return true;
+        }
+        // 90岁高寿结局
+        if(gs.age >= 90) {
+            showEnding('👴 百年人瑞', '长命百岁，见证时代变迁，福寿双全！', 'legend');
+            return true;
+        }
+        // 30岁前财富200万
+        if(gs.age <= 30 && gs.wealth >= 200) {
+            showEnding('⭐ 年少封神', '30岁前积累惊人财富，商业帝国雏形已成！', 'legend');
+            return true;
+        }
+        // 50岁前亿万富翁
+        if(gs.age <= 50 && gs.wealth >= 1000) {
+            showEnding('💎  billionaire传奇', '50岁前成为亿万富翁，一代商业传奇！', 'legend');
+            return true;
+        }
+        return false;
+    }
+
+    function showEnding(title, desc, type) {
+        if(gs.gameOver) return;
+        gs.gameOver = true;
+        gs.endingType = title;
+        saveToHall();
+
+        const modalDiv = document.getElementById('endingModal');
+        const icon = type === 'legend' ? '🏆' : type === 'grave' ? '⚰️' : type === 'bad' ? '💀' : '🎯';
+        const color = type === 'legend' ? 'gold' : type === 'grave' || type === 'bad' ? '#ef4444' : '#4da6ff';
+
+        modalDiv.innerHTML = `
+            <div class="ending-overlay">
+                <div class="ending-card" style="border-color:${color};">
+                    <div style="font-size:3rem;">${icon}</div>
+                    <h2 style="margin:10px 0;">${title}</h2>
+                    <p>${desc}</p>
+                    <div style="margin:15px 0; font-size:0.75rem; text-align:left; background:#0f1620; border-radius:16px; padding:12px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <div>🎂 享年 ${gs.age}岁</div>
+                            <div>🎖️ 成就 ${gs.achievements.length}个</div>
+                            <div>🧬 技能 ${gs.unlockedSkills.length}个</div>
+                            <div>✈️ 旅行 ${gs.travelCount}次</div>
+                            <div>💰 最终财富 ${gs.wealth.toFixed(1)}万</div>
+                            <div>🏅 挑战 ${gs.challengesCompleted.length}个</div>
+                            <div>📈 最高财富 ${gs.thisRun.maxWealth.toFixed(1)}万</div>
+                            <div>🎁 天赋 ${gs.talent ? gs.talent.name : '无'}</div>
+                        </div>
+                    </div>
+                    <button id="finalResetBtn" style="background:#4da6ff; border:none; padding:10px 32px; border-radius:40px; margin-top:10px; cursor:pointer; color:white; font-weight:bold; font-family:inherit;">🔄 重开人生</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('finalResetBtn').addEventListener('click', () => {
+            modalDiv.innerHTML = '';
+            resetGame();
+        });
+    }
+
+    // ═══════════════════ 行动执行核心 ═══════════════════
+    function performAction(actionId) {
+        if(gs.gameOver) return;
+        applyAging();
+        triggerMedicalEvent();
+
+        let logMsg = '';
+        let effectType = 'neutral';
+        gs.lastAction = actionId;
+
+        switch(actionId) {
+            case 'work': {
+                let income = getYearlyIncome();
+                gs.wealth += income;
+                gs.health = clamp(gs.health - (2 + randInt(0, 3)), 0, 100);
+                gs.happiness = clamp(gs.happiness - 2, 0, 100);
+                gs.stress = clamp(gs.stress + randInt(3, 10) * getTalentMultiplier('stressGainMul'), 0, 100);
+                logMsg = `💼 努力工作一年，赚取 ${income.toFixed(1)} 万元。身心略有疲惫，压力上升。`;
+                break;
+            }
+            case 'study': {
+                let gainIntel = Math.floor((3 + randInt(0, 6)) * getTalentMultiplier('intelGain')) + gs.skillEffects.studyBonus + getTalentMultiplier('studyBonus');
+                gs.intelligence = clamp(gs.intelligence + gainIntel, 0, 100);
+                gs.wealth -= 1.5;
+                gs.charm = clamp(gs.charm + 1, 0, 100);
+                gs.stress = clamp(gs.stress + randInt(2, 6), 0, 100);
+                logMsg = `📖 潜心学习，智力+${gainIntel}，魅力微增。花费1.5万元。`;
+                effectType = 'positive';
+                updateCareerDynamic();
+                break;
+            }
+            case 'exercise': {
+                let gainHealth = Math.floor((5 + randInt(0, 7)) * getTalentMultiplier('exerciseBonus')) + gs.skillEffects.exerciseBonus;
+                gs.health = clamp(gs.health + gainHealth, 0, 100);
+                gs.charm = clamp(gs.charm + 2, 0, 100);
+                gs.stress = Math.max(0, gs.stress - randInt(3, 8));
+                logMsg = `🏋️ 坚持锻炼，健康+${gainHealth}，体型提升魅力+2，压力释放。`;
+                effectType = 'positive';
+                break;
+            }
+            case 'socialize': {
+                gs.turnsSinceSocial = 0;
+                let socGain = Math.floor((6 + randInt(0, 5)) * gs.skillEffects.socialMul * getTalentMultiplier('socialGain'));
+                gs.social = clamp(gs.social + socGain, 0, 100);
+                gs.happiness = clamp(gs.happiness + 5, 0, 100);
+                gs.charm = clamp(gs.charm + 2, 0, 100);
+                gs.wealth -= 1.5;
+                gs.stress = Math.max(0, gs.stress - randInt(2, 5));
+                logMsg = `🎉 派对社交，结识朋友，社交+${socGain} 快乐↑，花费1.5万元。`;
+                effectType = 'positive';
+                break;
+            }
+            case 'rest': {
+                gs.happiness = clamp(gs.happiness + 10, 0, 100);
+                gs.health = clamp(gs.health + 4, 0, 100);
+                gs.stress = Math.max(0, gs.stress - randInt(8, 15));
+                gs.social = clamp(gs.social - 2, 0, 100);
+                logMsg = `🌴 休假旅行，放松身心，快乐+10 压力大幅下降。`;
+                break;
+            }
+            case 'venture': {
+                if(gs.intelligence < 38) {
+                    logMsg = '🧠 智力不足，创业失败风险太高，无法行动。';
+                    effectType = 'negative';
+                    gs.happiness -= 3;
+                    gs.stress = clamp(gs.stress + 5, 0, 100);
+                } else {
+                    let successRate = 0.45 + gs.luck / 200 + gs.skillEffects.ventureBonus + getTalentMultiplier('ventureBonus');
+                    let success = Math.random() < successRate;
+                    if(success) {
+                        let profit = (6 + rand(0, 25)) * (1 + gs.skillEffects.ventureBonus);
+                        gs.wealth += profit;
+                        gs.happiness = clamp(gs.happiness + 15, 0, 100);
+                        gs.social = clamp(gs.social + 5, 0, 100);
+                        gs.stress = clamp(gs.stress + 5, 0, 100);
+                        logMsg = `🚀 创业成功！盈利 ${profit.toFixed(1)} 万元，声名鹊起！`;
+                        effectType = 'positive';
+                        if(profit > 20) {
+                            gs.eventChain = 'startup_success';
+                            gs.eventChainStep = 0;
+                        }
+                    } else {
+                        let loss = 3 + rand(0, 15);
+                        gs.wealth = Math.max(-30, gs.wealth - loss);
+                        gs.happiness = clamp(gs.happiness - 12, 0, 100);
+                        gs.stress = clamp(gs.stress + 15, 0, 100);
+                        logMsg = `💔 创业失败，亏损${loss.toFixed(1)}万元，心情低落。`;
+                    }
+                }
+                break;
+            }
+            case 'date': {
+                if(gs.relationship !== '单身') {
+                    logMsg = '你已有伴侣，无法进行相亲约会。';
+                    effectType = 'neutral';
+                } else {
+                    let successChance = (gs.charm > 35 ? 0.4 : 0.2) + (gs.luck > 45 ? 0.15 : 0) + getTalentMultiplier('dateBonus');
+                    if(Math.random() < successChance) {
+                        gs.relationship = '恋爱中';
+                        gs.relationshipYears = 0;
+                        gs.happiness = clamp(gs.happiness + 20, 0, 100);
+                        logMsg = '💞 相亲大成功！邂逅命中注定之人，开始甜蜜恋爱！';
+                        effectType = 'special';
+                    } else {
+                        gs.happiness = clamp(gs.happiness - 5, 0, 100);
+                        gs.stress = clamp(gs.stress + 3, 0, 100);
+                        logMsg = '😔 相亲不太顺利，有些失落。继续提升魅力吧。';
+                    }
+                    gs.wealth -= 1;
+                }
+                break;
+            }
+            case 'investStock': {
+                let investAmount = Math.min(15, gs.wealth * 0.3);
+                if(investAmount < 1) {
+                    logMsg = '💰 资金不足无法投资。';
+                } else {
+                    let volatility = gs.skillEffects.investStable ? 1.2 : 2.5;
+                    let change = (Math.random() - 0.4) * volatility * (gs.luck / 50);
+                    let profit = investAmount * change;
+                    gs.wealth += profit;
+                    logMsg = `📊 股票投资 ${investAmount.toFixed(1)} 万元，收益 ${profit.toFixed(1)} 万元！`;
+                    effectType = profit > 0 ? 'positive' : 'negative';
+                }
+                break;
+            }
+            case 'buyHouse': {
+                if(gs.houseLevel === 0 && gs.wealth >= 18) {
+                    gs.wealth -= 16;
+                    gs.houseLevel = 1;
+                    logMsg = '🏡 购入温馨公寓，资产配置优化，幸福感提升。';
+                    gs.happiness = clamp(gs.happiness + 8, 0, 100);
+                    effectType = 'positive';
+                } else if(gs.houseLevel === 1 && gs.wealth >= 50) {
+                    gs.wealth -= 42;
+                    gs.houseLevel = 2;
+                    logMsg = '🏰 升级豪华别墅！人生赢家，社交魅力大增。';
+                    gs.charm = clamp(gs.charm + 6, 0, 100);
+                    gs.social = clamp(gs.social + 5, 0, 100);
+                    effectType = 'special';
+                } else {
+                    logMsg = '🏚️ 购房条件不足 (资金不足或已有豪宅)';
+                }
+                break;
+            }
+            case 'lottery': {
+                if(gs.lotteryCooldown > 0) {
+                    logMsg = `🎰 彩票冷却中，还需等待 ${gs.lotteryCooldown} 年。`;
+                } else if(gs.wealth < 0.5) {
+                    logMsg = '💰 连买彩票的钱都没有...';
+                } else {
+                    gs.wealth -= 0.5;
+                    gs.lotteryCooldown = 3;
+                    if(chance(0.05 + gs.luck / 1000)) {
+                        let win = rand(5, 30);
+                        gs.wealth += win;
+                        gs.happiness = clamp(gs.happiness + 10, 0, 100);
+                        logMsg = `🎰 彩票中奖！获得 ${win.toFixed(1)} 万元！`;
+                        effectType = 'positive';
+                    } else {
+                        logMsg = '🎰 彩票未中奖...期待下次好运。';
+                    }
+                }
+                break;
+            }
+            case 'therapy': {
+                let cost = 2 + gs.age * 0.1;
+                gs.wealth -= cost;
+                gs.stress = Math.max(0, gs.stress - randInt(15, 30));
+                gs.happiness = clamp(gs.happiness + 5, 0, 100);
+                logMsg = `🛋️ 心理咨询助你释放压力，压力大幅下降。花费${cost.toFixed(1)}万。`;
+                effectType = 'positive';
+                break;
+            }
+            case 'raiseChild': {
+                if(!gs.hasChildren) {
+                    logMsg = '👶 你还没有孩子...';
+                } else {
+                    let cost = rand(1, 3);
+                    gs.wealth -= cost;
+                    let eduGain = randInt(2, 5);
+                    gs.intelligence = clamp(gs.intelligence + eduGain, 0, 100);
+                    gs.happiness = clamp(gs.happiness + 5, 0, 100);
+                    logMsg = `👨‍👩‍👧 投入子女教育，智力+${eduGain}，亲子关系更亲密。花费${cost.toFixed(1)}万。`;
+                    effectType = 'positive';
+                }
+                break;
+            }
+        }
+
+        // 处理副业收入
+        processSideJobs();
+
+        // 彩票冷却
+        if(gs.lotteryCooldown > 0) gs.lotteryCooldown--;
+
+        addLog(logMsg, effectType);
+
+        gs.age++;
+        gs.year++;
+
+        // 随机事件触发
+        if(Math.random() < 0.6) triggerRichEvent();
+
+        updateCareerDynamic();
+        checkAchievements();
+        checkChallenges();
+        renderUI();
+        if(checkEnding()) renderUI();
+    }
+
+    // ═══════════════════ 成就系统 ═══════════════════
+    function checkAchievements() {
+        const ach = gs.achievements;
+        if(!ach.includes('wealth50') && gs.wealth >= 50) { ach.push('wealth50'); addLog('🏆 成就【富甲一方】财富突破50万', 'special'); showToast('🏆 富甲一方'); }
+        if(!ach.includes('wealth200') && gs.wealth >= 200) { ach.push('wealth200'); addLog('🏆 成就【百万富翁】财富突破200万', 'special'); showToast('🏆 百万富翁'); }
+        if(!ach.includes('lovemarriage') && gs.relationship === '已婚') { ach.push('lovemarriage'); addLog('❤️ 成就【执子之手】步入婚姻殿堂', 'special'); }
+        if(!ach.includes('genius') && gs.intelligence >= 90) { ach.push('genius'); addLog('🧠 成就【天才头脑】智力达到90', 'special'); }
+        if(!ach.includes('petlove') && gs.hasPet) { ach.push('petlove'); addLog('🐕 成就【萌宠相伴】', 'positive'); }
+        if(!ach.includes('houseowner') && gs.houseLevel >= 1) { ach.push('houseowner'); addLog('🏡 成就【安居乐业】拥有房产', 'positive'); }
+        if(!ach.includes('oldage') && gs.age >= 60) { ach.push('oldage'); addLog('🎂 成就【年高德劭】活到花甲之年', 'special'); }
+        if(!ach.includes('skill1') && gs.unlockedSkills.length >= 1) { ach.push('skill1'); addLog('🧬 成就【初窥门径】解锁第一个技能', 'positive'); }
+        if(!ach.includes('travel1') && gs.travelCount >= 1) { ach.push('travel1'); addLog('✈️ 成就【行者无疆】第一次旅行', 'positive'); }
+        if(!ach.includes('sidejob1') && gs.sideIncomeTotal >= 10) { ach.push('sidejob1'); addLog('💻 成就【斜杠青年】副业收入破10万', 'positive'); }
+        if(!ach.includes('stress0') && gs.stress < 5 && gs.age > 30) { ach.push('stress0'); addLog('😌 成就【心如止水】30岁后压力降至最低', 'special'); }
+    }
+
+    // ═══════════════════ 构建行动按钮 ═══════════════════
+    function buildActions() {
+        const actionsList = [
+            { id: 'work', icon: '💼', name: '努力工作', desc: '财富↑ 健康↓ 压力↑' },
+            { id: 'study', icon: '📚', name: '学习进修', desc: '智力↑ 魅力↑ 压力↑' },
+            { id: 'exercise', icon: '🏃', name: '锻炼塑形', desc: '健康↑ 魅力↑ 压力↓' },
+            { id: 'socialize', icon: '🎉', name: '社交派对', desc: '社交↑ 快乐↑ 压力↓' },
+            { id: 'rest', icon: '🌴', name: '度假放松', desc: '快乐↑ 压力↓↓' },
+            { id: 'venture', icon: '🚀', name: '创业冒险', desc: '高回报高风险' },
+            { id: 'date', icon: '💑', name: '浪漫相亲', desc: '迅速脱单' },
+            { id: 'investStock', icon: '📈', name: '股市博弈', desc: '运气/财富波动' },
+            { id: 'buyHouse', icon: '🏠', name: '置业房产', desc: '资产配置' },
+            { id: 'lottery', icon: '🎰', name: '购买彩票', desc: '小概率暴富' },
+            { id: 'therapy', icon: '🛋️', name: '心理咨询', desc: '释放压力' },
+            { id: 'raiseChild', icon: '👨‍👩‍👧', name: '子女教育', desc: '智力传承' }
+        ];
+        const container = document.getElementById('actionsGrid');
+        container.innerHTML = '';
+        actionsList.forEach(act => {
+            let btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.innerHTML = `<div class="icon-lg">${act.icon}</div><div class="action-text"><div class="action-name">${act.name}</div><div class="action-hint">${act.desc}</div></div>`;
+            btn.onclick = () => performAction(act.id);
+            container.appendChild(btn);
+        });
+    }
+
+    // ═══════════════════ Tab切换 ═══════════════════
+    function setupTabs() {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+    }
+
+    // ═══════════════════ 重置游戏 ═══════════════════
+    function resetGame() {
+        gs = createGameState();
+        updateCareerDynamic();
+        document.getElementById('logArea').innerHTML = '<div class="log-line">🌟 命运重启，你再次来到18岁，新的传奇即将书写！</div>';
+        renderUI();
+        buildActions();
+        showToast('✨ 人生重开，命运由你抉择', 1500);
+        showTalentSelect();
+    }
+
+    // ═══════════════════ 初始化 ═══════════════════
+    function init() {
+        buildActions();
+        setupTabs();
+        gs = createGameState();
+        updateCareerDynamic();
+        renderUI();
+        document.getElementById('logArea').innerHTML = '<div class="log-line">🌟 命运之门开启，欢迎来到地球Online！</div>';
+        document.getElementById('resetGameBtn').addEventListener('click', () => {
+            if(gs.gameOver) document.getElementById('endingModal').innerHTML = '';
+            resetGame();
+        });
+        showTalentSelect();
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>
