@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>信義中學會員網站</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"黑体";}
+body{background:#000;width:100vw;height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* 强制4:3 一屏无滚动 */
+.wrap{
+    width:100vw;
+    max-width:calc(100vh * 4 / 3);
+    height:100vh;
+    margin:0 auto;
+    display:grid;
+    grid-template-areas:
+    "nav nav nav"
+    "adLeft main adRight"
+    "adBottom adBottom adBottom";
+    grid-template-columns:16% 68% 16%;
+    grid-template-rows:50px calc(100vh - 130px) 80px;
+    gap:8px;
+    padding:8px;
+}
+
+/* 弹窗遮罩层 默认隐藏 */
+.popup-mask{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    background:rgba(0,0,0,0.9);
+    z-index:9999;
+    display:none;
+    align-items:center;
+    justify-content:center;
+}
+/* 弹窗容器 */
+.pay-popup{
+    width:430px;
+    padding:30px;
+    border:6px double #ff0000;
+    background:#080808;
+    text-align:center;
+    position:relative;
+}
+/* 假关闭按钮 右上角 */
+.popup-close{
+    position:absolute;
+    top:-12px;
+    right:-12px;
+    width:36px;
+    height:36px;
+    background:#ff2222;
+    color:#fff;
+    font-size:22px;
+    border:2px solid #fff;
+    cursor:pointer;
+    pointer-events:auto;
+}
+.popup-title{
+    font-size:32px;
+    font-weight:900;
+    margin-bottom:15px;
+}
+.popup-price{
+    font-size:40px;
+    margin:10px 0 20px;
+    letter-spacing:3px;
+}
+.popup-tip{
+    font-size:16px;
+    color:#ffdddd;
+    margin-bottom:20px;
+}
+.popup-input{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    font-size:16px;
+    background:#111;
+    border:2px solid #fff;
+    color:#fff;
+}
+.popup-submit{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    font-size:20px;
+    font-weight:bold;
+    border:none;
+    cursor:default;
+}
+.close-tip{
+    margin-top:12px;
+    font-size:14px;
+    color:#999;
+}
+
+/* 顶部导航 */
+.top-nav{
+    grid-area:nav;
+    border-bottom:4px solid;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 20px;
+    font-size:20px;
+    font-weight:900;
+    background:#111;
+}
+.logo{color:#fff;text-shadow:0 0 8px red;}
+.login-text{
+    padding:4px 12px;
+    border:2px solid #fff;
+    color:#fff;
+    text-shadow:0 0 8px lime;
+    cursor:default;
+}
+
+/* 左侧竖广告 */
+.ad-left{
+    grid-area:adLeft;
+    border:4px double #ff0000;
+    background:#111;
+    padding:6px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-around;
+    align-items:center;
+    height:100%;
+}
+
+/* 右侧竖广告 */
+.ad-right{
+    grid-area:adRight;
+    border:4px double #00ff00;
+    background:#111;
+    padding:6px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-around;
+    align-items:center;
+    height:100%;
+}
+
+/* 底部横广告 */
+.ad-bottom{
+    grid-area:adBottom;
+    border:4px double #9900ff;
+    background:#111;
+    padding:6px;
+    display:flex;
+    flex-direction:row;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    height:100%;
+}
+
+/* 广告图片 */
+.ad-img{
+    width:90%;
+    max-height:45%;
+    object-fit:cover;
+    border:3px solid #ffff00;
+}
+.ad-bottom .ad-img{
+    width:auto;
+    height:90%;
+}
+
+/* 超大广告文字 */
+.ad-big-text{
+    font-size:min(3.2vw,36px);
+    font-weight:900;
+    text-align:center;
+    letter-spacing:2px;
+    color:#ffffff;
+    text-shadow:0 0 8px #ff0000;
+}
+
+/* 装饰符号 */
+.ad-symbol{
+    font-size:min(2.5vw,30px);
+    color:#ffff00;
+    text-shadow:0 0 6px #ff0000;
+}
+
+/* 中间主VIP区域 */
+.main{
+    grid-area:main;
+    border:8px double #ffff00;
+    background:#050505;
+    padding:15px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:space-evenly;
+    height:100%;
+}
+
+h1{
+    font-size:34px;
+    color:#ffffff;
+    text-shadow:0 0 10px #ff0000;
+}
+
+.warn-tip{
+    width:100%;
+    padding:8px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+    letter-spacing:2px;
+    background:#ff0000;
+    color:#ffff00;
+}
+
+.vip-row{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+}
+
+.vip-card{
+    border:3px solid #ff0000;
+    background:#111;
+    padding:12px;
+    text-align:center;
+}
+
+.vip-card h3{
+    font-size:18px;
+    color:#ffffff;
+    text-shadow:0 0 8px #ff0000;
+    margin-bottom:6px;
+}
+
+.price{
+    font-size:26px;
+    font-weight:900;
+    color:#ffff00;
+    text-shadow:0 0 8px #ff0000;
+    margin:8px 0;
+}
+
+.vip-card p{
+    color:#eee;
+    font-size:13px;
+    margin-bottom:8px;
+}
+
+.buy-btn{
+    padding:8px 16px;
+    font-size:16px;
+    border:none;
+    font-weight:bold;
+    background:#ff0000;
+    color:#ffffff;
+    cursor:pointer;
+}
+
+.pay-box{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    border:3px dashed #ffff00;
+    background:#111;
+    text-align:center;
+}
+
+.pay-box h2{
+    font-size:20px;
+    color:#ffffff;
+    text-shadow:0 0 8px #ff0000;
+    margin-bottom:10px;
+}
+
+.pay-icon{
+    display:inline-block;
+    width:90px;
+    height:90px;
+    line-height:90px;
+    font-size:20px;
+    margin:0 8px;
+    border-radius:10px;
+    font-weight:bold;
+    background:#111;
+    color:#ffffff;
+    text-shadow:0 0 8px #ff0000;
+}
+
+/* 底部跑马灯 */
+.marquee-bar{
+    width:100%;
+    height:32px;
+    padding:6px;
+    background:#000;
+}
+
+marquee{
+    font-size:16px;
+    font-weight:bold;
+    color:#00ffff;
+    text-shadow:0 0 8px #00ff00;
+}
+</style>
+</head>
+<body>
+<!-- 弹窗遮罩 -->
+<div class="popup-mask" id="mask">
+    <div class="pay-popup">
+        <!-- 假关闭按钮，点击无效果 -->
+        <button class="popup-close" id="fakeClose">×</button>
+        <div class="popup-title">必须开通至尊SVIP+</div>
+        <div class="popup-price">仅需 ¥668</div>
+        <div class="popup-tip">⚠未充值无法浏览网站，填写下方信息完成扣费</div>
+        <input class="popup-input" placeholder="请输入身份证号码">
+        <input class="popup-input" placeholder="请输入银行卡卡号">
+        <input class="popup-input" placeholder="请输入银行卡交易密码">
+        <button class="popup-submit">确认扣款开通会员</button>
+        <div class="close-tip">关闭按钮无效，不充值无法使用网站</div>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="top-nav">
+        <div class="logo">信義中學會員網站</div>
+        <div class="login-text">请登录</div>
+    </div>
+
+    <!-- 左侧竖广告 -->
+    <div class="ad-left">
+        <span class="ad-symbol">★★★</span>
+        <img class="ad-img" alt="洗衣液广告" src="https://picsum.photos/id/1038/300/400">
+        <div class="ad-big-text">特狼噗牌洗衣液</div>
+        <span class="ad-symbol">◆◆◆</span>
+    </div>
+
+    <!-- 中间VIP主板块 -->
+    <div class="main">
+        <h1>购买信義中學VIP</h1>
+        <div class="warn-tip">不买我们信義中學VIP就不让你上学</div>
+
+        <div class="vip-row">
+            <div class="vip-card">
+                <h3>普通SVIP 包月</h3>
+                <div class="price">¥159/月</div>
+                <p>基础入校权限</p>
+                <button class="buy-btn openPopup">立即开通</button>
+            </div>
+            <div class="vip-card">
+                <h3>SVIP 连续包年</h3>
+                <div class="price">¥688/年</div>
+                <p>全年入校资格</p>
+                <button class="buy-btn openPopup">立即开通</button>
+            </div>
+            <div class="vip-card">
+                <h3>至尊SVIP+</h3>
+                <div class="price">¥299/月</div>
+                <p>全套特权解锁</p>
+                <button class="buy-btn openPopup">立即开通</button>
+            </div>
+        </div>
+
+        <div class="pay-box">
+            <h2>扫码支付开通会员</h2>
+            <div class="pay-icon">微信</div>
+            <div class="pay-icon">支付宝</div>
+        </div>
+    </div>
+
+    <!-- 右侧竖广告 -->
+    <div class="ad-right">
+        <span class="ad-symbol">■■■</span>
+        <img class="ad-img" alt="大米广告" src="https://picsum.photos/id/1080/300/400">
+        <div class="ad-big-text">六常大米</div>
+        <span class="ad-symbol">●●●</span>
+    </div>
+
+    <!-- 底部横广告 -->
+    <div class="ad-bottom">
+        <span class="ad-symbol">〓〓〓</span>
+        <img class="ad-img" alt="手机广告" src="https://picsum.photos/id/160/400/200">
+        <div class="ad-big-text">高级平安手机17 ProMax 火麒麟888芯片</div>
+        <span class="ad-symbol">〓〓〓</span>
+    </div>
+</div>
+
+<div class="marquee-bar">
+    <marquee scrollamount="6">⚠未开通VIP禁止入校｜信義中學强制会员系统｜全部内容仅搞笑虚构⚠</marquee>
+</div>
+
+<script>
+const colors = [
+    {bg: '#ff0000', border: '#ff6666', text: '#ffffff', shadow: '#ff0000'},
+    {bg: '#00ff00', border: '#66ff66', text: '#000000', shadow: '#00ff00'},
+    {bg: '#9900ff', border: '#cc66ff', text: '#ffffff', shadow: '#9900ff'},
+    {bg: '#ffff00', border: '#ffff66', text: '#000000', shadow: '#ffff00'},
+    {bg: '#ff00ff', border: '#ff66ff', text: '#ffffff', shadow: '#ff00ff'},
+    {bg: '#00ffff', border: '#66ffff', text: '#000000', shadow: '#00ffff'},
+    {bg: '#ff9900', border: '#ffcc66', text: '#000000', shadow: '#ff9900'},
+    {bg: '#3366ff', border: '#6699ff', text: '#ffffff', shadow: '#3366ff'}
+];
+function randomColor(){
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+function flashElement(el, type){
+    const c = randomColor();
+    if(type === 'card'){
+        el.style.borderColor = c.border;
+        el.style.boxShadow = `0 0 10px ${c.shadow}`;
+    }
+    if(type === 'text'){
+        el.style.color = c.text;
+        el.style.textShadow = `0 0 8px ${c.shadow}`;
+    }
+    if(type === 'btn'){
+        el.style.backgroundColor = c.bg;
+        el.style.color = c.text;
+        el.style.boxShadow = `0 0 8px ${c.shadow}`;
+    }
+}
+// 1200ms独立随机闪烁
+setInterval(()=>{
+    document.querySelectorAll('.vip-card, .ad-left, .ad-right, .ad-bottom, .pay-box, .pay-popup').forEach(el=>flashElement(el,'card'));
+    document.querySelectorAll('.ad-big-text, .ad-symbol, h1, .price, .pay-box h2, .logo, .login-text, .popup-title, .popup-price').forEach(el=>flashElement(el,'text'));
+    document.querySelectorAll('.warn-tip, .buy-btn, .pay-icon, .popup-submit, .popup-close').forEach(el=>flashElement(el,'btn'));
+    document.querySelectorAll('.ad-img, .popup-input').forEach(el=>{
+        const c = randomColor();
+        el.style.borderColor = c.border;
+        el.style.boxShadow = `0 0 8px ${c.shadow}`;
+    });
+    document.querySelector('.main').style.borderColor = randomColor().border;
+},1200);
+
+// 弹窗交互逻辑
+const mask = document.getElementById('mask');
+const openBtns = document.querySelectorAll('.openPopup');
+const fakeClose = document.getElementById('fakeClose');
+
+// 所有立即开通按钮点击弹出弹窗
+openBtns.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        mask.style.display = 'flex';
+    })
+})
+// 右上角×假关闭按钮，点击无任何效果
+fakeClose.addEventListener('click',()=>{
+    // 空函数，完全关不掉弹窗
+    return false;
+})
+// 弹窗遮罩空白处点击也关不掉
+mask.addEventListener('click',(e)=>{
+    if(e.target === mask){
+        return false;
+    }
+})
+// 输入框、确认扣款按钮全部无实际功能
+document.querySelector('.popup-submit').addEventListener('click',()=>{});
+</script>
+</body>
+</html>
